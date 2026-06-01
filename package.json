@@ -1,0 +1,17 @@
+{
+  "name": "ai-career-copilot",
+  "version": "1.0.0",
+  "description": "Premium Full-Stack AI-powered career platform",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm install --prefix backend-express && npm install --prefix frontend",
+    "start:backend": "npm start --prefix backend-express",
+    "start:frontend": "npm run dev --prefix frontend",
+    "start:ai": "cd backend-fastapi && uvicorn main:app --host 127.0.0.1 --port 8000 --reload",
+    "dev": "concurrently \"npm run start:backend\" \"npm run start:ai\" \"npm run start:frontend\"",
+    "setup:python": "cd backend-fastapi && pip install -r requirements.txt"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
