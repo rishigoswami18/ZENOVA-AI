@@ -1,1 +1,7 @@
 node_modules
+frontend/dist
+backend-fastapi/__pycache__
+backend-fastapi/services/__pycache__
+backend-express/db.json
+backend-express/.env
+backend-fastapi/.env
