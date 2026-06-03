@@ -40,6 +40,26 @@ export default function AdminDashboard() {
     loadOverview();
   }, []);
 
+  const handleToggleApproval = async (userId, currentStatus) => {
+    try {
+      const targetStatus = !currentStatus;
+      await api.toggleUserApproval(userId, targetStatus);
+      
+      setOverview(prev => {
+        if (!prev) return prev;
+        const updatedUsers = prev.recentUsers.map(u => 
+          u.id === userId ? { ...u, isApproved: targetStatus } : u
+        );
+        return {
+          ...prev,
+          recentUsers: updatedUsers
+        };
+      });
+    } catch (err) {
+      alert(err.message || "Failed to update user approval status");
+    }
+  };
+
   if (loading) {
     return (
       <div className="glass-card admin-empty-state">
@@ -98,12 +118,35 @@ export default function AdminDashboard() {
           </div>
           <div className="admin-list">
             {overview.recentUsers.length ? overview.recentUsers.map((user) => (
-              <div key={user.id} className="admin-list-item">
-                <div>
-                  <strong>{user.name}</strong>
-                  <p>{user.email}</p>
+              <div key={user.id} className="admin-list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <strong>{user.name}</strong>
+                    <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: user.role === 'admin' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(99, 102, 241, 0.2)', color: user.role === 'admin' ? '#ef4444' : '#6366f1', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      {user.role}
+                    </span>
+                    {user.isApproved ? (
+                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        Approved
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: '2px 0 4px', fontSize: '12px' }}>{user.email}</p>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Joined: {formatDate(user.createdAt)}</span>
                 </div>
-                <span>{formatDate(user.createdAt)}</span>
+                <div>
+                  <button 
+                    className={`btn ${user.isApproved ? 'btn-secondary' : 'btn-primary'}`} 
+                    style={{ fontSize: '10px', padding: '4px 10px', minWidth: '70px', height: 'auto', lineHeight: 'normal' }}
+                    onClick={() => handleToggleApproval(user.id, user.isApproved)}
+                  >
+                    {user.isApproved ? "Revoke" : "Approve"}
+                  </button>
+                </div>
               </div>
             )) : (
               <div className="admin-empty-inline">No users found yet.</div>

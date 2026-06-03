@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { readDb, writeDb } = require('../config/database');
+const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
@@ -14,30 +15,40 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const db = readDb();
-    const existing = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(400).json({ error: "User already exists with this email" });
     }
 
     // Securely hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = {
-      id: "user_" + Date.now(),
+    
+    // Create new user in MongoDB
+    const newUser = await User.create({
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
-      createdAt: new Date().toISOString()
-    };
+      role: 'candidate',
+      isApproved: false // Newly signed up candidate accounts are unapproved by default
+    });
 
-    db.users.push(newUser);
-    writeDb(db);
-
-    // Create JWT Token
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, JWT_SECRET, { expiresIn: '7d' });
+    // Create JWT Token including role and isApproved status
+    const token = jwt.sign(
+      { 
+        id: newUser._id, 
+        email: newUser.email,
+        role: newUser.role,
+        isApproved: newUser.isApproved 
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
     
     // Omit password from response
-    const { password: _, ...userResponse } = newUser;
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+    userResponse.id = userResponse._id; // Ensure client receives id
+
     res.status(201).json({ token, user: userResponse });
   } catch (err) {
     res.status(500).json({ error: "Server registration failed: " + err.message });
@@ -52,8 +63,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const db = readDb();
-    const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(400).json({ error: "Invalid credentials" });
     }
@@ -65,12 +75,42 @@ router.post('/login', async (req, res) => {
     }
 
     // Create JWT Token
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email,
+        role: user.role,
+        isApproved: user.isApproved 
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
 
-    const { password: _, ...userResponse } = user;
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    userResponse.id = userResponse._id; // Ensure client receives id
+
     res.status(200).json({ token, user: userResponse });
   } catch (err) {
     res.status(500).json({ error: "Server login failed: " + err.message });
+  }
+});
+
+// Get current profile details (for client state validation/sync)
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+    
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    userResponse.id = userResponse._id; // Ensure client receives id
+    
+    res.status(200).json(userResponse);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load current profile: " + err.message });
   }
 });
 

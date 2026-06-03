@@ -3,19 +3,17 @@ const router = express.Router();
 const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
-const { readDb, writeDb } = require('../config/database');
-const optionalAuth = require('../middleware/optionalAuth'); // Fallback in case they parse without logging in
+const Resume = require('../models/Resume');
+const optionalAuth = require('../middleware/optionalAuth');
+const authMiddleware = require('../middleware/auth');
 
-// Setup Multer memory storage (lightweight parsing without saving locally first)
+// Setup Multer memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
-
-// Optional Auth Middleware for endpoints that can be run guest/anonymous or logged in
-const authMiddleware = require('../middleware/auth');
 
 router.post('/upload', upload.single('resume'), async (req, res) => {
   try {
@@ -56,20 +54,18 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
       }
     }
 
-    const db = readDb();
-    const resumeEntry = {
-      id: "resume_" + Date.now(),
+    // Save to MongoDB
+    const resumeEntry = await Resume.create({
       userId,
       filename: req.file.originalname,
       targetRole,
-      report,
-      createdAt: new Date().toISOString()
-    };
+      report
+    });
 
-    db.resumes.push(resumeEntry);
-    writeDb(db);
+    const resumeResponse = resumeEntry.toObject();
+    resumeResponse.id = resumeResponse._id; // Map for client compatibility
 
-    res.status(200).json(resumeEntry);
+    res.status(200).json(resumeResponse);
   } catch (err) {
     console.error("Resume parsing error:", err.message);
     const detail = err.response && err.response.data && err.response.data.detail 
@@ -80,13 +76,13 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 });
 
 // Retrieve user's resume history
-router.get('/history', authMiddleware, (req, res) => {
+router.get('/history', authMiddleware, async (req, res) => {
   try {
-    const db = readDb();
-    const userResumes = db.resumes.filter(r => r.userId === req.user.id);
-    res.status(200).json(userResumes);
+    const userResumes = await Resume.find({ userId: req.user.id }).lean();
+    const userResumesWithId = userResumes.map(r => ({ ...r, id: r._id }));
+    res.status(200).json(userResumesWithId);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch resume logs." });
+    res.status(500).json({ error: "Failed to fetch resume logs: " + err.message });
   }
 });
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { readDb, writeDb } = require('../config/database');
+const Interview = require('../models/Interview');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 const authMiddleware = require('../middleware/auth');
@@ -64,21 +64,19 @@ router.post('/grade', async (req, res) => {
       }
     }
 
-    const db = readDb();
-    const interviewSession = {
-      id: "session_" + Date.now(),
+    // Save graded session to MongoDB
+    const interviewSession = await Interview.create({
       userId,
       question,
       userAnswer,
       targetRole,
-      report,
-      createdAt: new Date().toISOString()
-    };
+      report
+    });
 
-    db.interviews.push(interviewSession);
-    writeDb(db);
+    const interviewResponse = interviewSession.toObject();
+    interviewResponse.id = interviewResponse._id; // client compatibility mapping
 
-    res.status(200).json(interviewSession);
+    res.status(200).json(interviewResponse);
   } catch (err) {
     console.error("Interview grading error:", err.message);
     const detail = err.response && err.response.data && err.response.data.detail

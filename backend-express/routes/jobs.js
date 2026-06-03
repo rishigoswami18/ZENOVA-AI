@@ -1,17 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { readDb } = require('../config/database');
+const Job = require('../models/Job');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // Get all jobs
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const db = readDb();
-    res.status(200).json(db.jobs);
+    const jobs = await Job.find({}).lean();
+    
+    // Map _id to id for compatibility
+    const jobsWithId = jobs.map(j => ({ ...j, id: j._id }));
+    
+    res.status(200).json(jobsWithId);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch job postings" });
+    res.status(500).json({ error: "Failed to fetch job postings: " + err.message });
   }
 });
 
@@ -25,8 +29,7 @@ router.post('/:jobId/match', async (req, res) => {
       return res.status(400).json({ error: "resumeSkills array is required in the body" });
     }
 
-    const db = readDb();
-    const job = db.jobs.find(j => j.id === jobId);
+    const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({ error: "Job opening not found" });
     }

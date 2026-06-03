@@ -54,6 +54,29 @@ export const api = {
     );
   },
 
+  async getMe() {
+    return fetchJson(
+      `${EXPRESS_API_URL}/auth/me`,
+      {
+        method: 'GET',
+        headers: getHeaders()
+      },
+      'Failed to load user profile'
+    );
+  },
+
+  async toggleUserApproval(userId, isApproved) {
+    return fetchJson(
+      `${EXPRESS_API_URL}/admin/users/${userId}/approve`,
+      {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ isApproved })
+      },
+      'Failed to update user approval status'
+    );
+  },
+
   async login(email, password) {
     return fetchJson(
       `${EXPRESS_API_URL}/auth/login`,

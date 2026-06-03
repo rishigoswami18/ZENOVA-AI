@@ -40,13 +40,30 @@ export default function App() {
     roadmapProgress: 0
   });
 
-  // Check login state on mount
+  // Check login state on mount & sync profile status
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
-  }, []);
+
+    const syncProfile = async () => {
+      if (token) {
+        try {
+          const latestUser = await api.getMe();
+          localStorage.setItem('user', JSON.stringify(latestUser));
+          setUser(latestUser);
+        } catch (err) {
+          console.error("Token sync failed:", err.message);
+          if (err.message.includes("denied") || err.message.includes("expired") || err.message.includes("token")) {
+            handleLogout();
+          }
+        }
+      }
+    };
+
+    syncProfile();
+  }, [token]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -107,7 +124,7 @@ export default function App() {
     { id: 'roadmap', label: 'Learning Roadmap', icon: Compass },
     { id: 'interview', label: 'Video Interview', icon: HelpCircle },
     { id: 'coach', label: 'AI Career Coach', icon: MessageSquare },
-    { id: 'admin', label: 'Admin Dashboard', icon: Settings2 }
+    ...(user?.isApproved ? [{ id: 'admin', label: 'Admin Dashboard', icon: Settings2 }] : [])
   ];
 
   // Renders login/signup card if no active session
@@ -373,9 +390,15 @@ export default function App() {
               clearCoachContext={() => setCoachContext(null)} 
             />
           )}
-          {view === 'admin' && (
+          {view === 'admin' && user?.isApproved ? (
             <AdminDashboard />
-          )}
+          ) : view === 'admin' ? (
+            <div className="glass-card" style={{ margin: '40px auto', maxWidth: '500px', padding: '30px', textAlign: 'center' }}>
+              <Shield size={48} style={{ color: 'var(--warning)', margin: '0 auto 20px', display: 'block' }} />
+              <h2 style={{ marginBottom: '10px' }}>Access Restricted</h2>
+              <p style={{ color: 'var(--text-muted)' }}>Your account has not been approved to access the Admin Control Dashboard. Please ask an administrator to approve your account.</p>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
