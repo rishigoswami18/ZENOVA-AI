@@ -67,11 +67,11 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 
     res.status(200).json(resumeResponse);
   } catch (err) {
-    console.error("Resume parsing error:", err.message);
+    console.error(`Resume parsing error [Target: ${AI_SERVICE_URL}]:`, err.message);
     const detail = err.response && err.response.data && err.response.data.detail 
       ? err.response.data.detail 
       : err.message;
-    res.status(500).json({ error: "AI Parsing service unavailable: " + detail });
+    res.status(500).json({ error: `AI Parsing service unavailable (${AI_SERVICE_URL}): ` + detail });
   }
 });
 
