@@ -8,7 +8,22 @@ const Resume = require('../models/Resume');
 const Interview = require('../models/Interview');
 const Job = require('../models/Job');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ai-career-copilot';
+let MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ai-career-copilot';
+
+// Gracefully handle unencoded special characters (e.g. '@') in MongoDB password from environment config
+if (MONGODB_URI) {
+  const match = MONGODB_URI.match(/^(mongodb(?:\+srv)?:\/\/)([^:]+):(.*)@([^@/]+)(.*)$/);
+  if (match) {
+    const protocol = match[1];
+    const username = match[2];
+    const password = match[3];
+    const host = match[4];
+    const rest = match[5];
+    if (password.includes('@')) {
+      MONGODB_URI = `${protocol}${username}:${encodeURIComponent(password)}@${host}${rest}`;
+    }
+  }
+}
 
 const INITIAL_DATA_JOBS = [
   {
