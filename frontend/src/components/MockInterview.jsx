@@ -144,16 +144,14 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
   }, []);
 
   useEffect(() => {
-    if (videoSession?.intro_script && mode === 'video') {
-      speakAsInterviewer(videoSession.intro_script);
-    }
-  }, [videoSession, mode]);
-
-  useEffect(() => {
     if (currentVideoQuestion && mode === 'video') {
-      speakAsInterviewer(currentVideoQuestion.question);
+      if (videoQuestionIndex === 0 && videoSession?.intro_script) {
+        speakAsInterviewer(videoSession.intro_script + " Here is your first question: " + currentVideoQuestion.question);
+      } else {
+        speakAsInterviewer(currentVideoQuestion.question);
+      }
     }
-  }, [videoQuestionIndex, mode]);
+  }, [videoQuestionIndex, videoSession, mode]);
 
   const handleSubmit = async () => {
     if (!userAnswer.trim()) {
@@ -326,6 +324,9 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
       );
       setVideoReport(result.report);
       onInterviewScoreUpdate(result.report.overall_score);
+      if (result.report && result.report.follow_up_question) {
+        speakAsInterviewer("Thank you. " + result.report.follow_up_question);
+      }
     } catch (err) {
       setError(err.message || 'Virtual interview evaluation failed.');
     } finally {
@@ -339,7 +340,6 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
     setTimeLeft(timerSeconds);
     setError('');
     stopAnswerSession();
-    stopInterviewerSpeech();
     setVideoQuestionIndex((current) => {
       if (!videoSession?.questions?.length) {
         return current;
