@@ -526,6 +526,20 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
             <div className="video-panel-grid">
               <div className="video-preview-shell">
                 <video ref={videoRef} autoPlay muted playsInline className="video-preview" />
+                {cameraEnabled && (
+                  <div className="camera-hud-overlay">
+                    <div className="hud-corner top-left"></div>
+                    <div className="hud-corner top-right"></div>
+                    <div className="hud-corner bottom-left"></div>
+                    <div className="hud-corner bottom-right"></div>
+                    <div className="hud-grid-lines"></div>
+                    {isAnswering && (
+                      <div className="hud-recording-dot">
+                        <span className="dot-blink"></span> REC
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!cameraEnabled && (
                   <div className="video-preview-placeholder">
                     <Camera size={28} />
@@ -547,23 +561,14 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
                       <div className="backdrop-grid"></div>
                     </div>
                     <div className="avatar-halo"></div>
-                    <div className="video-avatar-body">
-                      <div className="avatar-head">
-                        <div className="avatar-hair"></div>
-                        <div className="avatar-face">
-                          <div className="avatar-eyes">
-                            <span></span>
-                            <span></span>
-                          </div>
-                          <div className="avatar-brows">
-                            <span></span>
-                            <span></span>
-                          </div>
-                          <div className="avatar-nose"></div>
-                          <div className={`avatar-mouth ${isInterviewerSpeaking ? 'talking' : ''}`}></div>
-                        </div>
-                      </div>
-                      <div className="avatar-shoulders"></div>
+                    <div className={`hologram-container ${isInterviewerSpeaking ? 'speaking' : ''}`}>
+                      <div className="hologram-orb"></div>
+                      <div className="hologram-wave wave-1"></div>
+                      <div className="hologram-wave wave-2"></div>
+                      <div className="hologram-wave wave-3"></div>
+                      <div className="hologram-ring ring-inner"></div>
+                      <div className="hologram-ring ring-outer"></div>
+                      <div className="hologram-scanner"></div>
                     </div>
                     <div className="avatar-lower-third">
                       <div>

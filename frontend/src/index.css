@@ -1161,113 +1161,186 @@ button, input, textarea, select {
   filter: blur(6px);
   animation: haloFloat 4s ease-in-out infinite;
 }
-
 .interviewer-avatar-card.speaking .avatar-halo {
   background: radial-gradient(circle, rgba(20, 184, 166, 0.35), rgba(20, 184, 166, 0));
 }
 
-.avatar-head {
+.hologram-container {
   position: relative;
-  width: 126px;
-  height: 156px;
-  animation: avatarNod 5s ease-in-out infinite;
-}
-
-.interviewer-avatar-card.speaking .avatar-head {
-  animation-duration: 1.2s;
-}
-
-.video-avatar-body {
-  position: relative;
-  z-index: 2;
+  width: 160px;
+  height: 160px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-}
-
-.avatar-hair {
-  position: absolute;
-  width: 126px;
-  height: 88px;
-  top: 0;
-  border-radius: 60px 60px 40px 40px;
-  background: linear-gradient(180deg, #0f172a, #1e293b);
+  justify-content: center;
+  margin-bottom: 20px;
   z-index: 2;
 }
 
-.avatar-face {
+.hologram-orb {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--primary-light), var(--primary));
+  box-shadow: 
+    0 0 25px rgba(99, 102, 241, 0.4), 
+    inset 0 0 12px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  animation: orbFloat 4s ease-in-out infinite;
+}
+
+.hologram-container.speaking .hologram-orb {
+  background: radial-gradient(circle at 30% 30%, var(--secondary-light), var(--secondary));
+  box-shadow: 
+    0 0 40px rgba(20, 184, 166, 0.5), 
+    inset 0 0 15px rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+  animation: orbPulse 0.5s ease-in-out infinite alternate;
+}
+
+.hologram-wave {
   position: absolute;
-  width: 106px;
-  height: 124px;
-  left: 10px;
-  top: 26px;
-  border-radius: 48px 48px 40px 40px;
-  background: linear-gradient(180deg, #f7d7c4, #e6b69b);
-  box-shadow: inset 0 -10px 20px rgba(0, 0, 0, 0.08);
+  border: 1.5px solid var(--primary);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hologram-container.speaking .hologram-wave {
+  animation: ripple 1.5s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+  border-color: var(--secondary);
+}
+
+.wave-1 { animation-delay: 0s; }
+.wave-2 { animation-delay: 0.5s; }
+.wave-3 { animation-delay: 1s; }
+
+.hologram-ring {
+  position: absolute;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  animation: rotateClockwise 20s linear infinite;
+}
+
+.ring-inner {
+  width: 100px;
+  height: 100px;
+}
+
+.ring-outer {
+  width: 130px;
+  height: 130px;
+  border-style: dotted;
+  animation: rotateCounterClockwise 25s linear infinite;
+}
+
+.hologram-scanner {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--secondary), transparent);
+  box-shadow: 0 0 8px var(--secondary);
+  animation: scanLine 3s ease-in-out infinite;
+  opacity: 0.4;
+}
+
+/* Camera HUD styles */
+.camera-hud-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+}
+
+.hud-corner {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--secondary);
+}
+
+.hud-corner.top-left { top: 12px; left: 12px; border-right: 0; border-bottom: 0; }
+.hud-corner.top-right { top: 12px; right: 12px; border-left: 0; border-bottom: 0; }
+.hud-corner.bottom-left { bottom: 12px; left: 12px; border-right: 0; border-top: 0; }
+.hud-corner.bottom-right { bottom: 12px; right: 12px; border-left: 0; border-top: 0; }
+
+.hud-grid-lines {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 33.33% 33.33%;
+}
+
+.hud-recording-dot {
+  position: absolute;
+  top: 18px;
+  right: 18px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding-top: 34px;
+  gap: 6px;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.avatar-eyes {
-  display: flex;
-  gap: 22px;
-}
-
-.avatar-eyes span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #111827;
-  position: relative;
-  animation: blink 6s infinite;
-}
-
-.avatar-eyes span::after {
-  content: '';
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
-  top: 2px;
-  left: 2px;
-}
-
-.avatar-brows {
-  position: absolute;
-  top: 26px;
-  display: flex;
-  gap: 18px;
-}
-
-.avatar-brows span {
-  width: 18px;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.7);
-}
-
-.avatar-nose {
+.dot-blink {
   width: 8px;
-  height: 14px;
-  border-radius: 8px;
-  margin-top: 16px;
-  background: rgba(191, 122, 95, 0.32);
-}
-
-.avatar-mouth {
-  margin-top: 18px;
-  width: 24px;
   height: 8px;
-  border-radius: 0 0 16px 16px;
-  background: #7f1d1d;
-  transition: var(--transition-smooth);
+  background-color: #ef4444;
+  border-radius: 50%;
+  display: inline-block;
+  animation: recordingBlink 1s step-start infinite;
 }
 
-.avatar-mouth.talking {
-  animation: talkPulse 0.28s ease-in-out infinite;
+@keyframes recordingBlink {
+  50% { opacity: 0; }
+}
+
+@keyframes orbFloat {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes orbPulse {
+  0% { transform: scale(1) translateY(-3px); }
+  100% { transform: scale(1.12) translateY(-3px); }
+}
+
+@keyframes ripple {
+  0% {
+    width: 70px;
+    height: 70px;
+    opacity: 0.7;
+  }
+  100% {
+    width: 150px;
+    height: 150px;
+    opacity: 0;
+  }
+}
+
+@keyframes scanLine {
+  0% { top: 10%; }
+  50% { top: 90%; }
+  100% { top: 10%; }
+}
+
+@keyframes rotateClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotateCounterClockwise {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
 
 .interviewer-subtitle {
