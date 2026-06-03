@@ -6,9 +6,10 @@ const Interview = require('../models/Interview');
 const Job = require('../models/Job');
 const authMiddleware = require('../middleware/auth');
 const approvedOnly = require('../middleware/approvedOnly');
+const adminOnly = require('../middleware/adminOnly');
 
 // Admin Dashboard Overview Stats
-router.get('/overview', authMiddleware, approvedOnly, async (req, res) => {
+router.get('/overview', authMiddleware, adminOnly, approvedOnly, async (req, res) => {
   try {
     const users = await User.find({}).lean();
     const resumes = await Resume.find({}).lean();
@@ -91,7 +92,7 @@ router.get('/overview', authMiddleware, approvedOnly, async (req, res) => {
 });
 
 // Update User Approval Status (Admin Only)
-router.put('/users/:userId/approve', authMiddleware, approvedOnly, async (req, res) => {
+router.put('/users/:userId/approve', authMiddleware, adminOnly, approvedOnly, async (req, res) => {
   try {
     const { userId } = req.params;
     const { isApproved } = req.body;

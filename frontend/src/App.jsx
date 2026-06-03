@@ -124,7 +124,7 @@ export default function App() {
     { id: 'roadmap', label: 'Learning Roadmap', icon: Compass },
     { id: 'interview', label: 'Video Interview', icon: HelpCircle },
     { id: 'coach', label: 'AI Career Coach', icon: MessageSquare },
-    ...(user?.isApproved ? [{ id: 'admin', label: 'Admin Dashboard', icon: Settings2 }] : [])
+    ...(user?.role === 'admin' && user?.isApproved ? [{ id: 'admin', label: 'Admin Dashboard', icon: Settings2 }] : [])
   ];
 
   // Renders login/signup card if no active session
@@ -390,7 +390,7 @@ export default function App() {
               clearCoachContext={() => setCoachContext(null)} 
             />
           )}
-          {view === 'admin' && user?.isApproved ? (
+          {view === 'admin' && user?.role === 'admin' && user?.isApproved ? (
             <AdminDashboard />
           ) : view === 'admin' ? (
             <div className="glass-card" style={{ margin: '40px auto', maxWidth: '500px', padding: '30px', textAlign: 'center' }}>
