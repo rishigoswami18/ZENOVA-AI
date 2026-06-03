@@ -1,4 +1,7 @@
-const BASE_URL = '/api';
+const EXPRESS_API_URL =
+  import.meta.env.VITE_EXPRESS_API_URL || 'http://127.0.0.1:5000/api';
+const FASTAPI_API_URL =
+  import.meta.env.VITE_FASTAPI_API_URL || 'http://127.0.0.1:8000';
 
 function getHeaders(token) {
   const headers = {
@@ -6,46 +9,75 @@ function getHeaders(token) {
   };
   const activeToken = token || localStorage.getItem('token');
   if (activeToken) {
-    headers['Authorization'] = `Bearer ${activeToken}`;
+    headers.Authorization = `Bearer ${activeToken}`;
   }
   return headers;
 }
 
+async function parseApiResponse(res) {
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+
+  if (isJson) {
+    return res.json();
+  }
+
+  const text = await res.text();
+  throw new Error(text || `Unexpected ${res.status} response from server`);
+}
+
+async function fetchJson(url, options, fallbackError) {
+  const res = await fetch(url, options);
+  const data = await parseApiResponse(res);
+
+  if (!res.ok) {
+    const message =
+      data?.error ||
+      data?.detail ||
+      fallbackError ||
+      `Request failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 export const api = {
   async getAdminOverview() {
-    const res = await fetch(`${BASE_URL}/admin/overview`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load admin overview');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/admin/overview`,
+      {
+        method: 'GET',
+        headers: getHeaders()
+      },
+      'Failed to load admin overview'
+    );
   },
 
-  // Auth Operations
   async login(email, password) {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/auth/login`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      },
+      'Login failed'
+    );
   },
 
   async signup(name, email, password) {
-    const res = await fetch(`${BASE_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Registration failed');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/auth/signup`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      },
+      'Registration failed'
+    );
   },
 
-  // Resume Operations
   async uploadResume(file, targetRole) {
     const formData = new FormData();
     formData.append('resume', file);
@@ -54,125 +86,122 @@ export const api = {
     const headers = {};
     const token = localStorage.getItem('token');
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${BASE_URL}/resume/upload`, {
-      method: 'POST',
-      headers,
-      body: formData
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to parse resume');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/resume/upload`,
+      {
+        method: 'POST',
+        headers,
+        body: formData
+      },
+      'Failed to parse resume'
+    );
   },
 
   async getResumeHistory() {
-    const res = await fetch(`${BASE_URL}/resume/history`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load resume history');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/resume/history`,
+      {
+        method: 'GET',
+        headers: getHeaders()
+      },
+      'Failed to load resume history'
+    );
   },
 
-  // Job Operations
   async getJobs() {
-    const res = await fetch(`${BASE_URL}/jobs`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load jobs');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/jobs`,
+      {
+        method: 'GET',
+        headers: getHeaders()
+      },
+      'Failed to load jobs'
+    );
   },
 
   async matchJob(jobId, resumeSkills) {
-    const res = await fetch(`${BASE_URL}/jobs/${jobId}/match`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ resumeSkills })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Job matching calculation failed');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/jobs/${jobId}/match`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ resumeSkills })
+      },
+      'Job matching calculation failed'
+    );
   },
 
-  // Roadmap Operations
   async generateRoadmap(targetRole, missingSkills) {
-    // Calling the Python AI service via a route proxied by FastAPI or direct
-    // Since our monorepo scripts define routes, let's look at Express gateway endpoints.
-    // Wait, let's see. Does Express have a roadmap route?
-    // In our implementation plan we had '/generate-roadmap' on FastAPI.
-    // Wait! Let's make sure our Express backend can proxy or we can call FastAPI directly from frontend,
-    // or let's call FastAPI on port 8000 directly!
-    // Wait, calling FastAPI on port 8000 directly from the frontend works beautifully because we enabled CORS on FastAPI (`allow_origins=["*"]`)!
-    // This is super clean and robust: heavy AI operations can hit the FastAPI backend directly on port 8000!
-    // Let's implement that! Direct FastAPI calls to `http://127.0.0.1:8000` is incredibly fast.
-    const res = await fetch(`http://127.0.0.1:8000/generate-roadmap`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_role: targetRole, missing_skills: missingSkills })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Failed to generate roadmap');
-    return data;
+    return fetchJson(
+      `${FASTAPI_API_URL}/generate-roadmap`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_role: targetRole, missing_skills: missingSkills })
+      },
+      'Failed to generate roadmap'
+    );
   },
 
-  // Interview Operations
   async getInterviewQuestions(role) {
-    const res = await fetch(`${BASE_URL}/interview/questions?role=${encodeURIComponent(role)}`, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to load questions');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/interview/questions?role=${encodeURIComponent(role)}`,
+      {
+        method: 'GET',
+        headers: getHeaders()
+      },
+      'Failed to load questions'
+    );
   },
 
   async gradeInterviewAnswer(question, userAnswer, targetRole, difficulty) {
-    const res = await fetch(`${BASE_URL}/interview/grade`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ question, userAnswer, targetRole, difficulty })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Evaluation grading failed');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/interview/grade`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ question, userAnswer, targetRole, difficulty })
+      },
+      'Evaluation grading failed'
+    );
   },
 
   async createVideoInterviewSession(targetRole, interviewType, difficulty) {
-    const res = await fetch(`${BASE_URL}/interview/video-session`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ targetRole, interviewType, difficulty })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to start virtual interview');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/interview/video-session`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ targetRole, interviewType, difficulty })
+      },
+      'Failed to start virtual interview'
+    );
   },
 
   async gradeVideoInterviewAnswer(question, transcript, targetRole, interviewType, difficulty, durationSeconds) {
-    const res = await fetch(`${BASE_URL}/interview/video-grade`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ question, transcript, targetRole, interviewType, difficulty, durationSeconds })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Virtual interview evaluation failed');
-    return data;
+    return fetchJson(
+      `${EXPRESS_API_URL}/interview/video-grade`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ question, transcript, targetRole, interviewType, difficulty, durationSeconds })
+      },
+      'Virtual interview evaluation failed'
+    );
   },
 
-  // Coach Chat Operations
   async sendMessageToCoach(message, history, topic = null) {
-    const res = await fetch(`http://127.0.0.1:8000/coach-chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, history, topic })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Failed to get response from career coach');
-    return data;
+    return fetchJson(
+      `${FASTAPI_API_URL}/coach-chat`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history, topic })
+      },
+      'Failed to get response from career coach'
+    );
   }
 };
