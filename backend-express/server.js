@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 5000;
 // Enable CORS for frontend requests
 app.add_middleware = app.use(cors({
   origin: '*', // Allow all origins for the local mock deployment
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -39,6 +39,10 @@ app.get('/', (req, res) => {
     status: "online",
     message: "ZENOVA AI Express Gateway active."
   });
+});
+
+app.head('/', (req, res) => {
+  res.status(200).end();
 });
 
 // Start Server Listening
