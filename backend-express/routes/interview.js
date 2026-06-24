@@ -47,6 +47,10 @@ router.post('/grade', async (req, res) => {
       user_answer: userAnswer,
       target_role: targetRole || "AI Engineer",
       difficulty: difficulty || "Medium"
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
     });
 
     const report = response.data;
@@ -93,6 +97,10 @@ router.post('/video-session', async (req, res) => {
       target_role: targetRole || "AI Engineer",
       interview_type: interviewType || "Technical",
       difficulty: difficulty || "Medium"
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
     });
 
     res.status(200).json(response.data);
@@ -119,6 +127,10 @@ router.post('/video-grade', async (req, res) => {
       interview_type: interviewType || "Technical",
       difficulty: difficulty || "Medium",
       duration_seconds: durationSeconds || 0
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
     });
 
     res.status(200).json({ report: response.data });
@@ -128,6 +140,29 @@ router.post('/video-grade', async (req, res) => {
       ? err.response.data.detail
       : err.message;
     res.status(500).json({ error: "Virtual interview evaluation failed: " + detail });
+  }
+});
+
+// Proxy to coach-chat in FastAPI AI engine (protected by gateway auth)
+router.post('/coach-chat', authMiddleware, async (req, res) => {
+  try {
+    const { message, history, topic } = req.body;
+    const response = await axios.post(`${AI_SERVICE_URL}/coach-chat`, {
+      message,
+      history,
+      topic
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (err) {
+    console.error("Coach chat proxy failure:", err.message);
+    const detail = err.response && err.response.data && err.response.data.detail
+      ? err.response.data.detail
+      : err.message;
+    res.status(500).json({ error: "AI Career Coach connection lost: " + detail });
   }
 });
 

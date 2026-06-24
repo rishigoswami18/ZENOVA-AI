@@ -101,6 +101,17 @@ export const api = {
     );
   },
 
+  async deleteAccount() {
+    return fetchJson(
+      `${EXPRESS_API_URL}/auth/delete-account`,
+      {
+        method: 'DELETE',
+        headers: getHeaders()
+      },
+      'Failed to delete user account'
+    );
+  },
+
   async uploadResume(file, targetRole) {
     const formData = new FormData();
     formData.append('resume', file);
@@ -159,11 +170,11 @@ export const api = {
 
   async generateRoadmap(targetRole, missingSkills) {
     return fetchJson(
-      `${FASTAPI_API_URL}/generate-roadmap`,
+      `${EXPRESS_API_URL}/resume/roadmap`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_role: targetRole, missing_skills: missingSkills })
+        headers: getHeaders(),
+        body: JSON.stringify({ targetRole, missingSkills })
       },
       'Failed to generate roadmap'
     );
@@ -218,10 +229,10 @@ export const api = {
 
   async sendMessageToCoach(message, history, topic = null) {
     return fetchJson(
-      `${FASTAPI_API_URL}/coach-chat`,
+      `${EXPRESS_API_URL}/interview/coach-chat`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ message, history, topic })
       },
       'Failed to get response from career coach'

@@ -33,9 +33,9 @@ INTERVIEW_DATA = {
 
 class InterviewGrader:
     @classmethod
-    def grade_answer(cls, question: str, user_answer: str, target_role: str, difficulty: str) -> dict:
+    async def grade_answer(cls, question: str, user_answer: str, target_role: str, difficulty: str) -> dict:
         """Grades an interview answer, falling forward to LLM if key is present, otherwise using NLP keywords."""
-        result = chat_json(
+        result = await chat_json(
             "You are a professional technical interviewer. Grade the user's technical answer out of 100. "
             "Provide feedback with: 1) Score, 2) Strengths, 3) Weaknesses/Omissions, 4) Model Answer. "
             "Return strict JSON with keys: score, strengths, omissions, model_answer.",

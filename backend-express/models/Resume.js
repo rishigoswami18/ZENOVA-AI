@@ -12,4 +12,7 @@ const resumeSchema = new mongoose.Schema({
   toJSON: { virtuals: true }
 });
 
+// Index for fast query execution during history retrieve & admin aggregations
+resumeSchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Resume', resumeSchema);

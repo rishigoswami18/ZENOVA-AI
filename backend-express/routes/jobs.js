@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const NodeCache = require('node-cache');
 const Job = require('../models/Job');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
+const matchCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }); // Cache matching evaluations for 1 hour
 
 // Get all jobs
 router.get('/', async (req, res) => {
@@ -19,7 +21,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Calculate compatibility score of user skills against a specific job
+// Calculate compatibility score of user skills against a specific job (with local in-memory caching)
 router.post('/:jobId/match', async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -27,6 +29,15 @@ router.post('/:jobId/match', async (req, res) => {
 
     if (!resumeSkills || !Array.isArray(resumeSkills)) {
       return res.status(400).json({ error: "resumeSkills array is required in the body" });
+    }
+
+    // Check if match calculation is already cached
+    const sortedSkills = [...resumeSkills].sort().join(',');
+    const cacheKey = `match_${jobId}_${sortedSkills}`;
+    const cachedResult = matchCache.get(cacheKey);
+    
+    if (cachedResult) {
+      return res.status(200).json(cachedResult);
     }
 
     const job = await Job.findById(jobId);
@@ -39,12 +50,21 @@ router.post('/:jobId/match', async (req, res) => {
       resume_skills: resumeSkills,
       job_title: job.title,
       job_description: job.description
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
     });
 
-    res.status(200).json({
+    const matchResponse = {
       jobId,
       matchReport: response.data
-    });
+    };
+
+    // Cache the successful match result
+    matchCache.set(cacheKey, matchResponse);
+
+    res.status(200).json(matchResponse);
   } catch (err) {
     console.error("Job matching route error:", err.message);
     const detail = err.response && err.response.data && err.response.data.detail

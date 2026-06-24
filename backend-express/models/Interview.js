@@ -13,4 +13,7 @@ const interviewSchema = new mongoose.Schema({
   toJSON: { virtuals: true }
 });
 
+// Index for query acceleration when loading mock logs and dashboards
+interviewSchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Interview', interviewSchema);

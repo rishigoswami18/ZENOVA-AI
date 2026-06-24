@@ -187,8 +187,14 @@ async function seedDatabase() {
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log("MongoDB connected successfully.");
+    const connectionOptions = {
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000
+    };
+    await mongoose.connect(MONGODB_URI, connectionOptions);
+    console.log("MongoDB connected successfully with production pool config.");
     await seedDatabase();
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);

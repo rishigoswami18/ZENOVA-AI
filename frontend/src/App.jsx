@@ -13,6 +13,7 @@ import SkillGapDetector from './components/SkillGapDetector';
 import LearningRoadmap from './components/LearningRoadmap';
 import MockInterview from './components/MockInterview';
 import CareerCoach from './components/CareerCoach';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -342,63 +343,65 @@ export default function App() {
         </header>
 
         <div className="content-body">
-          {view === 'dashboard' && (
-            <Dashboard 
-              stats={stats} 
-              setView={setView} 
-              parsedResume={parsedResume} 
-            />
-          )}
-          {view === 'resume' && (
-            <ResumeAnalyzer 
-              onResumeParsed={handleResumeParsed} 
-              parsedResume={parsedResume}
-              targetRole={targetRole}
-            />
-          )}
-          {view === 'jobs' && (
-            <JobRecommendations 
-              parsedResume={parsedResume} 
-              setView={setView} 
-              setCoachContext={setCoachContext} 
-            />
-          )}
-          {view === 'skills' && (
-            <SkillGapDetector 
-              parsedResume={parsedResume} 
-              targetRole={targetRole} 
-              setTargetRole={setTargetRole}
-              setView={setView}
-            />
-          )}
-          {view === 'roadmap' && (
-            <LearningRoadmap 
-              parsedResume={parsedResume} 
-              targetRole={targetRole} 
-              onProgressUpdate={(prog) => setStats(prev => ({ ...prev, roadmapProgress: prog }))}
-            />
-          )}
-          {view === 'interview' && (
-            <MockInterview 
-              targetRole={targetRole} 
-              onInterviewScoreUpdate={(score) => setStats(prev => ({ ...prev, interviewReadiness: score }))}
-            />
-          )}
-          {view === 'coach' && (
-            <CareerCoach 
-              coachContext={coachContext} 
-              clearCoachContext={() => setCoachContext(null)} 
-            />
-          )}
-          {view === 'admin' && user?.role === 'admin' && user?.isApproved ? (
-            <AdminDashboard />
-          ) : view === 'admin' ? (
-            <div className="glass-card" style={{ margin: '40px auto', maxWidth: '500px', padding: '30px', textAlign: 'center' }}>
-              <Shield size={48} style={{ color: 'var(--warning)', margin: '0 auto 20px', display: 'block' }} />
-              <h2 style={{ marginBottom: '10px' }}>Access Restricted</h2>
-              <p style={{ color: 'var(--text-muted)' }}>Your account has not been approved to access the Admin Control Dashboard. Please ask an administrator to approve your account.</p>
-            </div>
-          ) : null}
+          <ErrorBoundary>
+            {view === 'dashboard' && (
+              <Dashboard 
+                stats={stats} 
+                setView={setView} 
+                parsedResume={parsedResume} 
+              />
+            )}
+            {view === 'resume' && (
+              <ResumeAnalyzer 
+                onResumeParsed={handleResumeParsed} 
+                parsedResume={parsedResume}
+                targetRole={targetRole}
+              />
+            )}
+            {view === 'jobs' && (
+              <JobRecommendations 
+                parsedResume={parsedResume} 
+                setView={setView} 
+                setCoachContext={setCoachContext} 
+              />
+            )}
+            {view === 'skills' && (
+              <SkillGapDetector 
+                parsedResume={parsedResume} 
+                targetRole={targetRole} 
+                setTargetRole={setTargetRole}
+                setView={setView}
+              />
+            )}
+            {view === 'roadmap' && (
+              <LearningRoadmap 
+                parsedResume={parsedResume} 
+                targetRole={targetRole} 
+                onProgressUpdate={(prog) => setStats(prev => ({ ...prev, roadmapProgress: prog }))}
+              />
+            )}
+            {view === 'interview' && (
+              <MockInterview 
+                targetRole={targetRole} 
+                onInterviewScoreUpdate={(score) => setStats(prev => ({ ...prev, interviewReadiness: score }))}
+              />
+            )}
+            {view === 'coach' && (
+              <CareerCoach 
+                coachContext={coachContext} 
+                clearCoachContext={() => setCoachContext(null)} 
+              />
+            )}
+            {view === 'admin' && user?.role === 'admin' && user?.isApproved ? (
+              <AdminDashboard />
+            ) : view === 'admin' ? (
+              <div className="glass-card" style={{ margin: '40px auto', maxWidth: '500px', padding: '30px', textAlign: 'center' }}>
+                <Shield size={48} style={{ color: 'var(--warning)', margin: '0 auto 20px', display: 'block' }} />
+                <h2 style={{ marginBottom: '10px' }}>Access Restricted</h2>
+                <p style={{ color: 'var(--text-muted)' }}>Your account has not been approved to access the Admin Control Dashboard. Please ask an administrator to approve your account.</p>
+              </div>
+            ) : null}
+          </ErrorBoundary>
         </div>
       </main>
     </div>

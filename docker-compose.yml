@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  database:
+    image: mongo:6.0
+    container_name: zenova_database
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  ai-service:
+    build:
+      context: ./backend-fastapi
+      dockerfile: Dockerfile
+    container_name: zenova_ai_service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+    depends_on:
+      - database
+
+  gateway:
+    build:
+      context: ./backend-express
+      dockerfile: Dockerfile
+    container_name: zenova_gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGODB_URI=mongodb://database:27017/ai-career-copilot
+      - AI_SERVICE_URL=http://ai-service:8000
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+    depends_on:
+      - database
+      - ai-service
+
+volumes:
+  mongodb_data:

@@ -28,6 +28,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Correlation ID Tracing Middleware
+from fastapi import Request
+import uuid
+
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next):
+    correlation_id = request.headers.get("x-correlation-id", str(uuid.uuid4()))
+    request.state.correlation_id = correlation_id
+    response = await call_next(request)
+    response.headers["x-correlation-id"] = correlation_id
+    return response
+
 # API Models
 class MatchJobRequest(BaseModel):
     resume_skills: List[str]
@@ -108,10 +120,10 @@ def generate_roadmap(req: GenerateRoadmapRequest):
         raise HTTPException(status_code=500, detail=f"Failed to compile learning roadmap: {str(e)}")
 
 @app.post("/grade-interview")
-def grade_interview(req: GradeInterviewRequest):
+async def grade_interview(req: GradeInterviewRequest):
     """Grades mock interview answers."""
     try:
-        evaluation = InterviewGrader.grade_answer(
+        evaluation = await InterviewGrader.grade_answer(
             req.question, req.user_answer, req.target_role, req.difficulty
         )
         return evaluation
@@ -120,9 +132,9 @@ def grade_interview(req: GradeInterviewRequest):
 
 
 @app.post("/video-interview/session")
-def generate_video_interview(req: GenerateVideoInterviewRequest):
+async def generate_video_interview(req: GenerateVideoInterviewRequest):
     try:
-        session = VideoInterviewCoach.generate_session(
+        session = await VideoInterviewCoach.generate_session(
             req.target_role, req.interview_type, req.difficulty
         )
         return session
@@ -131,9 +143,9 @@ def generate_video_interview(req: GenerateVideoInterviewRequest):
 
 
 @app.post("/video-interview/evaluate")
-def evaluate_video_interview(req: GradeVideoInterviewRequest):
+async def evaluate_video_interview(req: GradeVideoInterviewRequest):
     try:
-        evaluation = VideoInterviewCoach.evaluate_answer(
+        evaluation = await VideoInterviewCoach.evaluate_answer(
             req.target_role,
             req.interview_type,
             req.difficulty,
@@ -146,7 +158,7 @@ def evaluate_video_interview(req: GradeVideoInterviewRequest):
         raise HTTPException(status_code=500, detail=f"Failed to evaluate video interview: {str(e)}")
 
 @app.post("/coach-chat")
-def coach_chat(req: CoachChatRequest):
+async def coach_chat(req: CoachChatRequest):
     """Conversational AI career coaching agent."""
     msg = req.message.lower()
 
@@ -155,7 +167,7 @@ def coach_chat(req: CoachChatRequest):
     )
     topic_text = req.topic or "general career coaching"
 
-    llm_reply = chat_text(
+    llm_reply = await chat_text(
         "You are an elite AI career coach for software, data, and AI roles. Give practical, encouraging, concise advice. "
         "Use bullets only when they genuinely help. If the user asks for scripts, provide a ready-to-send draft.",
         f"Topic: {topic_text}\nConversation history:\n{history_text}\n\nLatest user message:\n{req.message}",

@@ -32,8 +32,8 @@ FALLBACK_QUESTIONS = {
 
 class VideoInterviewCoach:
     @staticmethod
-    def generate_session(target_role: str, interview_type: str, difficulty: str) -> dict:
-        result = chat_json(
+    async def generate_session(target_role: str, interview_type: str, difficulty: str) -> dict:
+        result = await chat_json(
             "You are a senior interviewer creating a realistic mock video interview session. "
             "Return strict JSON with keys: interviewer_name, interviewer_style, intro_script, "
             "delivery_focus, success_criteria, questions. "
@@ -75,7 +75,7 @@ class VideoInterviewCoach:
         }
 
     @staticmethod
-    def evaluate_answer(
+    async def evaluate_answer(
         target_role: str,
         interview_type: str,
         difficulty: str,
@@ -83,7 +83,7 @@ class VideoInterviewCoach:
         transcript: str,
         duration_seconds: int,
     ) -> dict:
-        result = chat_json(
+        result = await chat_json(
             "You are a senior interviewer grading a live virtual interview response. "
             "Return strict JSON with keys: overall_score, content_score, delivery_score, confidence_score, "
             "strengths, improvements, follow_up_question, sample_polished_answer. "

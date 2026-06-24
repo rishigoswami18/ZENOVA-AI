@@ -7,10 +7,22 @@ const Resume = require('../models/Resume');
 const optionalAuth = require('../middleware/optionalAuth');
 const authMiddleware = require('../middleware/auth');
 
-// Setup Multer memory storage
+// Setup Multer memory storage with file security validation
+const path = require('path');
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExtensions = ['.pdf', '.txt'];
+    const allowedMimeTypes = ['application/pdf', 'text/plain'];
+    
+    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only PDF and TXT resumes are allowed for security reasons.'));
+    }
+  }
 });
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
@@ -33,7 +45,8 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
 
     const response = await axios.post(`${AI_SERVICE_URL}/analyze-resume`, form, {
       headers: {
-        ...form.getHeaders()
+        ...form.getHeaders(),
+        'x-correlation-id': req.correlationId
       },
       maxContentLength: Infinity,
       maxBodyLength: Infinity
@@ -83,6 +96,28 @@ router.get('/history', authMiddleware, async (req, res) => {
     res.status(200).json(userResumesWithId);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch resume logs: " + err.message });
+  }
+});
+
+// Proxy to generate-roadmap in FastAPI AI engine
+router.post('/roadmap', authMiddleware, async (req, res) => {
+  try {
+    const { targetRole, missingSkills } = req.body;
+    const response = await axios.post(`${AI_SERVICE_URL}/generate-roadmap`, {
+      target_role: targetRole,
+      missing_skills: missingSkills
+    }, {
+      headers: {
+        'x-correlation-id': req.correlationId
+      }
+    });
+    res.status(200).json(response.data);
+  } catch (err) {
+    console.error("Roadmap generation failure:", err.message);
+    const detail = err.response && err.response.data && err.response.data.detail
+      ? err.response.data.detail
+      : err.message;
+    res.status(500).json({ error: "FastAPI AI Roadmap generator degraded: " + detail });
   }
 });
 

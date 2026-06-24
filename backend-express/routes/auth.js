@@ -3,6 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Resume = require('../models/Resume');
+const Interview = require('../models/Interview');
 const authMiddleware = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
@@ -111,6 +113,24 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(200).json(userResponse);
   } catch (err) {
     res.status(500).json({ error: "Failed to load current profile: " + err.message });
+  }
+});
+
+// GDPR & PII Account Deletion Endpoint
+router.delete('/delete-account', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Perform cascaded wipes of PII data
+    await User.findByIdAndDelete(userId);
+    await Resume.deleteMany({ userId });
+    await Interview.deleteMany({ userId });
+    
+    res.status(200).json({ 
+      message: "Your profile details, resumes, and interview histories have been successfully deleted from our records." 
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to process account deletion request: " + err.message });
   }
 });
 

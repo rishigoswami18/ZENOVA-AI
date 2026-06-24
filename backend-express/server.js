@@ -13,31 +13,83 @@ const resumeRoutes = require('./routes/resume');
 const jobRoutes = require('./routes/jobs');
 const interviewRoutes = require('./routes/interview');
 
+const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS for frontend requests
-app.add_middleware = app.use(cors({
-  origin: '*', // Allow all origins for the local mock deployment
+// Setup correlation ID middleware
+app.use((req, res, next) => {
+  const correlationId = req.headers['x-correlation-id'] || crypto.randomUUID();
+  req.correlationId = correlationId;
+  res.setHeader('x-correlation-id', correlationId);
+  next();
+});
+
+// Configure CORS with production safety checks
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Access blocked by CORS security policy'));
+    }
+  },
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id']
 }));
+
+// Apply Rate Limiters to secure from denial-of-service / brute-force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit each IP to 30 requests per windowMs
+  message: { error: "Too many requests to authentication endpoint. Please retry after 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per minute
+  message: { error: "Rate limit exceeded. Please slow down." },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routing Middleware Bindings
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/resume', resumeRoutes);
-app.use('/api/jobs', jobRoutes);
-app.use('/api/interview', interviewRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/admin', apiLimiter, adminRoutes);
+app.use('/api/resume', apiLimiter, resumeRoutes);
+app.use('/api/jobs', apiLimiter, jobRoutes);
+app.use('/api/interview', apiLimiter, interviewRoutes);
 
-// Base Status Check
+// Base Status & Health Checks
+app.get('/health', async (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const isHealthy = dbState === 1; // 1 = connected
+  
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "online" : "unhealthy",
+    database: isHealthy ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
+    correlationId: req.correlationId
+  });
+});
+
 app.get('/', (req, res) => {
   res.status(200).json({
     status: "online",
-    message: "ZENOVA AI Express Gateway active."
+    message: "ZENOVA AI Express Gateway active.",
+    correlationId: req.correlationId
   });
 });
 
