@@ -1,12 +1,13 @@
 import re
 import io
+import docx
 from PyPDF2 import PdfReader
 
 # Comprehensive skill dictionaries by categories
 SKILL_POOLS = {
     "frontend": [
         "html", "css", "javascript", "typescript", "react", "vue", "angular", 
-        "next.js", "redux", "tailwind css", "bootstrap", "sass", "webpack", "vite", "sass"
+        "next.js", "redux", "tailwind css", "bootstrap", "sass", "webpack", "vite"
     ],
     "backend": [
         "python", "node.js", "express", "fastapi", "django", "flask", "java", "spring boot", 
@@ -21,6 +22,26 @@ SKILL_POOLS = {
         "pytorch", "tensorflow", "scikit-learn", "numpy", "pandas", "keras", 
         "nlp", "computer vision", "llms", "langchain", "llama", "huggingface", 
         "vector databases", "pinecone", "chromadb", "data science", "deep learning"
+    ],
+    "product_management": [
+        "roadmap", "agile", "scrum", "product requirements", "prd", "user stories", 
+        "prioritization", "wireframing", "market research", "a/b testing"
+    ],
+    "design": [
+        "figma", "sketch", "adobe xd", "wireframes", "prototyping", "user research", 
+        "ui design", "ux design", "information architecture", "interaction design"
+    ],
+    "analytics_business": [
+        "sql", "excel", "tableau", "power bi", "google analytics", "python", "r", 
+        "amplitude", "mixpanel", "statistics", "data visualization"
+    ],
+    "marketing_sales": [
+        "seo", "sem", "growth marketing", "content strategy", "crm", "salesforce", 
+        "hubspot", "cold outreach", "negotiation", "copywriting"
+    ],
+    "hr_operations": [
+        "recruiting", "talent acquisition", "onboarding", "ats", "interviewing", 
+        "payroll", "compliance", "employee relations", "process optimization"
     ],
     "soft_skills": [
         "leadership", "communication", "agile", "scrum", "problem solving", 
@@ -48,6 +69,46 @@ ROLE_REQUIREMENTS = {
     "Frontend Developer": {
         "required": ["html", "css", "javascript", "typescript", "react", "tailwind css", "git"],
         "preferred": ["next.js", "redux", "sass", "webpack", "vite"]
+    },
+    "Data Scientist": {
+        "required": ["python", "sql", "statistics", "pandas", "numpy", "scikit-learn"],
+        "preferred": ["r", "tableau", "deep learning", "tensorflow", "git", "data science"]
+    },
+    "DevOps Engineer": {
+        "required": ["docker", "kubernetes", "aws", "ci/cd", "terraform", "linux", "git"],
+        "preferred": ["gcp", "ansible", "jenkins", "nginx", "golang", "bash"]
+    },
+    "QA Engineer": {
+        "required": ["testing", "selenium", "cypress", "javascript", "python", "git"],
+        "preferred": ["ci/cd", "postman", "rest apis", "agile", "scrum"]
+    },
+    "Product Manager": {
+        "required": ["roadmap", "product requirements", "user stories", "agile", "scrum", "prioritization", "communication"],
+        "preferred": ["wireframing", "a/b testing", "google analytics", "sql", "project management"]
+    },
+    "UI/UX Designer": {
+        "required": ["figma", "ui design", "ux design", "wireframes", "prototyping", "user research"],
+        "preferred": ["sketch", "adobe xd", "information architecture", "interaction design", "communication"]
+    },
+    "Data Analyst": {
+        "required": ["sql", "excel", "tableau", "pandas", "python", "data visualization"],
+        "preferred": ["power bi", "google analytics", "mixpanel", "r", "statistics"]
+    },
+    "HR Manager": {
+        "required": ["recruiting", "talent acquisition", "interviewing", "communication", "onboarding", "leadership"],
+        "preferred": ["ats", "payroll", "compliance", "employee relations", "teamwork"]
+    },
+    "Marketing Manager": {
+        "required": ["seo", "sem", "growth marketing", "content strategy", "crm", "communication"],
+        "preferred": ["google analytics", "copywriting", "hubspot", "salesforce", "collaboration"]
+    },
+    "Sales Representative": {
+        "required": ["salesforce", "crm", "negotiation", "cold outreach", "communication", "leadership"],
+        "preferred": ["hubspot", "copywriting", "project management", "collaboration"]
+    },
+    "Operations Specialist": {
+        "required": ["process optimization", "project management", "excel", "communication", "problem solving", "leadership"],
+        "preferred": ["sql", "crm", "agile", "scrum", "collaboration"]
     }
 }
 
@@ -64,6 +125,10 @@ class ResumeParser:
                     page_text = page.extract_text()
                     if page_text:
                         text += page_text + "\n"
+            elif filename.lower().endswith(".docx"):
+                doc_file = io.BytesIO(file_bytes)
+                doc = docx.Document(doc_file)
+                text = "\n".join([para.text for para in doc.paragraphs])
             else:
                 text = file_bytes.decode("utf-8", errors="ignore")
         except Exception as e:
@@ -156,5 +221,7 @@ class ResumeParser:
                 "found_preferred": found_preferred,
                 "missing_preferred": missing_preferred
             },
-            "suggestions": suggestions
+            "suggestions": suggestions,
+            "raw_text_preview": text[:2000],  # Return snippet for LLM context
+            "skills": extracted_skills         # Alias for frontend consistency
         }

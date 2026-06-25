@@ -1,0 +1,6 @@
+pandas==3.0.3
+numpy
+scikit-learn
+joblib
+# Optional: MLflow for experimentation tracking as mentioned in Step 4
+# mlflow

@@ -19,6 +19,54 @@ const QUESTIONS_DATABASE = {
   "Fullstack Engineer": [
     { id: "q5", question: "Explain Difference between SQL and NoSQL databases.", difficulty: "Easy" },
     { id: "q6", question: "What is JWT and how does it securely handle authentication?", difficulty: "Medium" }
+  ],
+  "Backend Developer": [
+    { id: "q7", question: "What are the key differences between REST and GraphQL APIs?", difficulty: "Medium" },
+    { id: "q8", question: "How do you design a database schema for a multi-tenant SaaS application?", difficulty: "Hard" }
+  ],
+  "Frontend Developer": [
+    { id: "q9", question: "Explain the Virtual DOM and how React uses it for efficient rendering.", difficulty: "Medium" },
+    { id: "q10", question: "How do you optimize a web application for Core Web Vitals?", difficulty: "Medium" }
+  ],
+  "Data Scientist": [
+    { id: "q11", question: "How do you handle highly imbalanced classes in a classification problem?", difficulty: "Medium" },
+    { id: "q12", question: "Explain the bias-variance tradeoff and how it affects model selection.", difficulty: "Medium" }
+  ],
+  "DevOps Engineer": [
+    { id: "q13", question: "Describe the difference between blue-green and canary deployments.", difficulty: "Medium" },
+    { id: "q14", question: "How do you manage secrets securely across multiple containerized services?", difficulty: "Medium" }
+  ],
+  "QA Engineer": [
+    { id: "q15", question: "How do you design a regression testing strategy for a fast-releasing product?", difficulty: "Medium" },
+    { id: "q16", question: "Explain the testing pyramid and when to use each layer.", difficulty: "Easy" }
+  ],
+  "Product Manager": [
+    { id: "q17", question: "How do you prioritize features when multiple stakeholders have competing demands?", difficulty: "Medium" },
+    { id: "q18", question: "Describe how you would measure the success of a newly launched product feature.", difficulty: "Medium" }
+  ],
+  "UI/UX Designer": [
+    { id: "q19", question: "Walk through your design process from user research to high-fidelity prototypes.", difficulty: "Medium" },
+    { id: "q20", question: "How do you design for accessibility while maintaining visual aesthetics?", difficulty: "Medium" }
+  ],
+  "Data Analyst": [
+    { id: "q21", question: "What is your approach to cleaning messy unstructured data before analysis?", difficulty: "Medium" },
+    { id: "q22", question: "How do you design an executive dashboard that remains clear and actionable?", difficulty: "Medium" }
+  ],
+  "HR Manager": [
+    { id: "q23", question: "How do you resolve performance conflicts between a manager and direct report?", difficulty: "Medium" },
+    { id: "q24", question: "Describe your strategy for building a diverse candidate pipeline for hard-to-fill roles.", difficulty: "Medium" }
+  ],
+  "Marketing Manager": [
+    { id: "q25", question: "How would you design a launch campaign for a new SaaS product on a limited budget?", difficulty: "Medium" },
+    { id: "q26", question: "Describe a time you used analytics to pivot a failing marketing campaign.", difficulty: "Medium" }
+  ],
+  "Sales Representative": [
+    { id: "q27", question: "How do you handle pricing objections from a high-value enterprise prospect?", difficulty: "Medium" },
+    { id: "q28", question: "What is your process for researching and qualifying leads before outreach?", difficulty: "Easy" }
+  ],
+  "Operations Specialist": [
+    { id: "q29", question: "How do you identify bottlenecks in an existing process workflow?", difficulty: "Medium" },
+    { id: "q30", question: "Describe how you would build a framework to measure team productivity.", difficulty: "Medium" }
   ]
 };
 

@@ -338,6 +338,16 @@ export default function App() {
               <option value="Fullstack Engineer">Fullstack Engineer</option>
               <option value="Backend Developer">Backend Developer</option>
               <option value="Frontend Developer">Frontend Developer</option>
+              <option value="Data Scientist">Data Scientist</option>
+              <option value="DevOps Engineer">DevOps Engineer</option>
+              <option value="QA Engineer">QA Engineer</option>
+              <option value="Product Manager">Product Manager</option>
+              <option value="UI/UX Designer">UI/UX Designer</option>
+              <option value="Data Analyst">Data Analyst</option>
+              <option value="HR Manager">HR Manager</option>
+              <option value="Marketing Manager">Marketing Manager</option>
+              <option value="Sales Representative">Sales Representative</option>
+              <option value="Operations Specialist">Operations Specialist</option>
             </select>
           </div>
         </header>

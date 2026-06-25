@@ -27,6 +27,56 @@ FALLBACK_QUESTIONS = {
         "Tell me about a time you handled complex state management or async UI flows.",
         "How would you architect a responsive dashboard that stays fast with heavy data?",
     ],
+    "Data Scientist": [
+        "How do you deal with highly imbalanced classes in a classification dataset?",
+        "Tell me about a time you had to explain a complex machine learning model to business partners.",
+        "How would you design an A/B test to evaluate a new recommendation feature?"
+    ],
+    "DevOps Engineer": [
+        "Walk me through how you would set up a blue-green deployment pipeline for a high-availability service.",
+        "Tell me about a time you debugged a major network configuration or infrastructure bottleneck.",
+        "How do you manage secret configurations securely across multi-container cloud deployments?"
+    ],
+    "QA Engineer": [
+        "How do you design a comprehensive regression testing plan for a fast-releasing SaaS product?",
+        "Tell me about a time you caught a critical edge case during integration checks.",
+        "How would you automate testing of a highly dynamic dashboard containing asynchronous charts?"
+    ],
+    "Product Manager": [
+        "How do you resolve prioritization conflicts when engineering, design, and sales demand different features?",
+        "Describe how you would measure the success and adoption metrics of a newly launched workspace feature.",
+        "Walk me through a time you had to pivot a product's direction based on customer feedback."
+    ],
+    "UI/UX Designer": [
+        "Walk me through your design process from initial user research down to hi-fi interactive prototypes.",
+        "How do you handle critique from developers or business owners that conflicts with user experience guidelines?",
+        "Describe how you would design an inclusive, highly accessible complex checkout screen."
+    ],
+    "Data Analyst": [
+        "What is your approach to cleaning messy, unstructured data before running aggregations?",
+        "Describe a time when your analytical insights directly drove a key business decision.",
+        "How do you design a high-level dashboard to ensure it remains clean, clear, and actionable for executives?"
+    ],
+    "HR Manager": [
+        "How do you resolve conflict between a manager and their direct report regarding performance expectations?",
+        "Describe your strategy for sourcing and building a diverse candidate pipeline for hard-to-fill tech roles.",
+        "Walk me through how you design an onboarding process that maximizes initial employee retention."
+    ],
+    "Marketing Manager": [
+        "How would you design a launch campaign for a new SaaS product on a constrained budget?",
+        "Describe a time you used data analytics to pivot a failing growth marketing campaign.",
+        "How do you maintain brand voice and messaging consistency across multiple digital channels?"
+    ],
+    "Sales Representative": [
+        "How do you handle pricing objections from a high-value enterprise prospect?",
+        "Describe a time you won back a lost client or closed a deal that was stalled for months.",
+        "What is your process for researching and qualifying leads before making cold outreach?"
+    ],
+    "Operations Specialist": [
+        "How do you identify bottlenecks in an existing administrative or internal onboarding process?",
+        "Describe a time you managed a major cross-departmental initiative under tight deadlines.",
+        "How would you build a framework to measure and report team productivity to leadership?"
+    ]
 }
 
 

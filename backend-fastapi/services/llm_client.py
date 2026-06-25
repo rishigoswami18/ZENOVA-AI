@@ -49,7 +49,7 @@ async def _post_openai_compatible_async(
     if response_format:
         payload["response_format"] = response_format
 
-    async with httpx.AsyncClient(timeout=25.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(base_url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()

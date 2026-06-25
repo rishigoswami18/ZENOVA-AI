@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Loader, Sparkles, User, HelpCircle } from 'lucide-react';
+import { Send, MessageSquare, Loader, Sparkles, User, HelpCircle, Paperclip, FileText, X } from 'lucide-react';
 import { api } from '../utils/api';
 
 export default function CareerCoach({ coachContext, clearCoachContext }) {
@@ -11,7 +11,10 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [analyzingFile, setAnalyzingFile] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Scroll to bottom when messages update
   const scrollToBottom = () => {
@@ -30,28 +33,71 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
     }
   }, [coachContext]);
 
-  const handleDirectPrompt = async (text, topic = null) => {
-    const userBubble = { role: 'user', content: text };
+  const handleSend = async () => {
+    if (!input.trim() && !attachedFile) return;
+
+    let textToSend = input;
+    let originalUserMessage = input;
+
+    if (attachedFile) {
+      setAnalyzingFile(true);
+      try {
+        const analysis = await api.parseDocumentForCoach(attachedFile);
+        const fileContext = `[SYSTEM CONTEXT: The user attached a document named "${attachedFile.name}". \nParsed content: ${analysis.raw_text_preview || "No preview available"}\nSkills detected: ${analysis.skills ? analysis.skills.join(', ') : 'None'}]\n\n`;
+        textToSend = fileContext + (input || "Analyze this document.");
+        if (!originalUserMessage) {
+          originalUserMessage = `Analyzed document: ${attachedFile.name}`;
+        }
+      } catch (err) {
+        setMessages(prev => [...prev, { role: 'assistant', content: "I couldn't process that file. Please make sure it's a valid PDF or Word document." }]);
+        setAnalyzingFile(false);
+        return;
+      }
+    }
+
+    const text = textToSend;
+    const userDisplayMsg = originalUserMessage;
+
+    setInput('');
+    setAttachedFile(null);
+    setAnalyzingFile(false);
+
+    handleDirectPrompt(text, null, userDisplayMsg);
+  };
+
+  const handleDirectPrompt = async (text, topic = null, displayMsg = null) => {
+    const userBubble = { role: 'user', content: displayMsg || text };
     setMessages(prev => [...prev, userBubble]);
     setLoading(true);
     try {
       const historyPayload = messages.map(m => ({ role: m.role, content: m.content }));
-      historyPayload.push(userBubble);
-      
+      historyPayload.push({ role: 'user', content: text });
+
       const response = await api.sendMessageToCoach(text, historyPayload, topic);
       setMessages(prev => [...prev, { role: 'assistant', content: response.response }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I'm having trouble connecting to the career advisory service. Please check if the FastAPI microservice is online." }]);
+      const errorMsg = err.message.includes('401') || err.message.includes('Authentication')
+        ? "Please log in to use the AI Career Coach features. Guest mode has limited AI access."
+        : "I'm having trouble connecting to the AI services. Please ensure the backend microservices are running.";
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const text = input;
-    setInput('');
-    handleDirectPrompt(text);
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File is too large. Please upload a document smaller than 5MB.");
+        return;
+      }
+      setAttachedFile(file);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -67,7 +113,7 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
       // Basic markdown conversion for bold statements (**text**)
       const boldPattern = /\*\*(.*?)\*\*/g;
       const htmlText = paragraph.replace(boldPattern, '<strong>$1</strong>');
-      
+
       if (paragraph.startsWith('- ') || paragraph.startsWith('* ')) {
         return <li key={index} style={{ marginLeft: '12px' }} dangerouslySetInnerHTML={{ __html: htmlText.substring(2) }} />;
       }
@@ -85,15 +131,15 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
   return (
     <div className="career-coach-view animate-fadeIn">
       <div className="glass-card chat-container">
-        
+
         {/* Chat Feed */}
         <div className="chat-messages">
           {messages.map((msg, i) => (
             <div key={i} className={`chat-bubble ${msg.role}`}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                <div style={{ 
-                  backgroundColor: msg.role === 'assistant' ? 'var(--primary-light)' : 'rgba(255,255,255,0.1)', 
-                  padding: '6px', 
+                <div style={{
+                  backgroundColor: msg.role === 'assistant' ? 'var(--primary-light)' : 'rgba(255,255,255,0.1)',
+                  padding: '6px',
                   borderRadius: '6px',
                   color: msg.role === 'assistant' ? 'var(--primary)' : '#ffffff',
                   marginTop: '2px'
@@ -121,7 +167,7 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
         {/* Quick Action Chips */}
         <div className="chat-chips">
           {quickActionChips.map((chip, idx) => (
-            <button 
+            <button
               key={idx}
               className="chip-btn"
               onClick={() => handleDirectPrompt(chip.prompt)}
@@ -133,23 +179,50 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
         </div>
 
         {/* Input box */}
-        <div className="chat-input-area">
-          <textarea
-            className="chat-input"
-            placeholder="Type your question here (e.g., 'How should I explain a gap on my resume?' or 'Draft an email script...')"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-          />
-          <button 
-            className="btn btn-primary"
-            style={{ width: '48px', height: '48px', padding: 0, borderRadius: '12px' }}
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-          >
-            <Send size={18} />
-          </button>
+        <div className="chat-input-container">
+          {attachedFile && (
+            <div className="file-attachment-pill animate-slideUp">
+              <FileText size={14} />
+              <span className="file-name">{attachedFile.name}</span>
+              <button className="remove-file" onClick={() => setAttachedFile(null)}>
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          <div className="chat-input-area">
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept=".pdf,.doc,.docx"
+              onChange={handleFileChange}
+            />
+            <button
+              className="btn-icon-secondary"
+              title="Attach Document (PDF/Doc)"
+              onClick={handleFileClick}
+              disabled={loading || analyzingFile}
+            >
+              <Paperclip size={18} />
+            </button>
+            <textarea
+              className="chat-input"
+              placeholder={analyzingFile ? "Analyzing document content..." : "Type your question or attach a doc..."}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loading || analyzingFile}
+            />
+            <button
+              className="btn btn-primary"
+              style={{ width: '48px', height: '48px', padding: 0, borderRadius: '12px' }}
+              onClick={handleSend}
+              disabled={loading || analyzingFile || (!input.trim() && !attachedFile)}
+            >
+              {analyzingFile || loading ? <Loader className="animate-spin" size={18} /> : <Send size={18} />}
+            </button>
+          </div>
         </div>
 
       </div>

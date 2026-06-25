@@ -5,7 +5,11 @@ const path = require('path');
 const { connectDB } = require('./config/database');
 
 // Connect to MongoDB Database
-connectDB();
+// Connect to MongoDB Database (Non-blocking attempt to prevent startup crash)
+connectDB().catch(err => {
+  console.error("CRITICAL: Initial database connection failed but server is starting anyway.");
+  console.error(err.message);
+});
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -31,7 +35,7 @@ app.use((req, res, next) => {
 // Configure CORS with production safety checks
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -76,7 +80,7 @@ app.use('/api/interview', apiLimiter, interviewRoutes);
 app.get('/health', async (req, res) => {
   const dbState = mongoose.connection.readyState;
   const isHealthy = dbState === 1; // 1 = connected
-  
+
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? "online" : "unhealthy",
     database: isHealthy ? "connected" : "disconnected",

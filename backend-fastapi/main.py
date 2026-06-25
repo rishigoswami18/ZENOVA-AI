@@ -144,6 +144,7 @@ async def generate_video_interview(req: GenerateVideoInterviewRequest):
 
 @app.post("/video-interview/evaluate")
 async def evaluate_video_interview(req: GradeVideoInterviewRequest):
+    print(f"DEBUG: EVALUATING VIDEO INTERVIEW - Q: {req.question[:20]}... Transcript length: {len(req.transcript)}")
     try:
         evaluation = await VideoInterviewCoach.evaluate_answer(
             req.target_role,

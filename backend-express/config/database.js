@@ -75,6 +75,106 @@ const INITIAL_DATA_JOBS = [
     description: "Craft pixel-perfect, responsive web designs and optimized single-page web structures. Implement rich UI transition features, modular theme components, and ensure state integrity. Deep familiarity with HTML5, CSS3, Tailwind layouts, and React is mandatory.",
     skillsRequired: ["html", "css", "javascript", "typescript", "react", "tailwind css", "git"],
     type: "Contract"
+  },
+  {
+    _id: "job_6",
+    title: "Data Scientist",
+    company: "Airbnb",
+    location: "San Francisco, CA (Hybrid)",
+    salary: "$150,000 - $200,000",
+    description: "Drive product strategy through rigorous data analysis, experimentation, and predictive modeling. Partner with product and engineering teams to build recommendation models, run A/B tests, and develop data pipelines. Strong Python, SQL, and statistics skills required.",
+    skillsRequired: ["python", "sql", "statistics", "pandas", "numpy", "scikit-learn"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_7",
+    title: "DevOps Engineer",
+    company: "Spotify",
+    location: "Stockholm, Sweden (Remote)",
+    salary: "€90,000 - €130,000",
+    description: "Own and scale cloud infrastructure for hundreds of microservices powering millions of daily active users. Design CI/CD pipelines, manage Kubernetes clusters, and implement infrastructure-as-code with Terraform. AWS and Docker expertise essential.",
+    skillsRequired: ["docker", "kubernetes", "aws", "ci/cd", "terraform", "linux", "git"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_8",
+    title: "QA Engineer",
+    company: "Shopify",
+    location: "Toronto, Canada (Remote)",
+    salary: "CAD $100,000 - $140,000",
+    description: "Ensure product quality across the commerce platform through automated test suites, integration testing, and performance benchmarking. Build robust Cypress and Selenium test frameworks. Collaborate with developers to embed quality into the CI pipeline.",
+    skillsRequired: ["testing", "selenium", "cypress", "javascript", "python", "git"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_9",
+    title: "Product Manager",
+    company: "Notion",
+    location: "San Francisco, CA (Hybrid)",
+    salary: "$140,000 - $190,000",
+    description: "Lead product strategy for a fast-growing collaboration tool used by millions. Define roadmaps, write detailed PRDs, run discovery sprints, and work cross-functionally with engineering and design. Experience with agile methodologies and data-driven decision making required.",
+    skillsRequired: ["roadmap", "product requirements", "user stories", "agile", "scrum", "prioritization", "communication"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_10",
+    title: "UI/UX Designer",
+    company: "Figma",
+    location: "New York, NY (Hybrid)",
+    salary: "$130,000 - $175,000",
+    description: "Shape the future of collaborative design tooling by creating intuitive, accessible, and visually stunning interfaces. Conduct user research, create wireframes and high-fidelity prototypes, and collaborate with engineers. Mastery of Figma and interaction design principles is expected.",
+    skillsRequired: ["figma", "ui design", "ux design", "wireframes", "prototyping", "user research"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_11",
+    title: "Data Analyst",
+    company: "Uber",
+    location: "Chicago, IL (Hybrid)",
+    salary: "$95,000 - $130,000",
+    description: "Transform raw data into actionable insights for marketplace and rider operations teams. Build dashboards, run cohort analyses, and present findings to leadership. Expert-level SQL, Tableau, and Python skills required.",
+    skillsRequired: ["sql", "excel", "tableau", "pandas", "python", "data visualization"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_12",
+    title: "HR Manager",
+    company: "Salesforce",
+    location: "San Francisco, CA (Onsite)",
+    salary: "$110,000 - $145,000",
+    description: "Lead talent acquisition strategy and employee experience programs for a high-growth engineering organization. Design onboarding workflows, manage recruiting pipelines, and ensure compliance with employment standards. Strong communication and leadership skills are essential.",
+    skillsRequired: ["recruiting", "talent acquisition", "interviewing", "communication", "onboarding", "leadership"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_13",
+    title: "Marketing Manager",
+    company: "HubSpot",
+    location: "Boston, MA (Remote)",
+    salary: "$100,000 - $140,000",
+    description: "Drive growth through multi-channel marketing campaigns, content strategy, and SEO/SEM optimization. Analyze campaign performance with data analytics tools and iterate rapidly. Experience with CRM platforms and digital marketing required.",
+    skillsRequired: ["seo", "sem", "growth marketing", "content strategy", "crm", "communication"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_14",
+    title: "Sales Representative",
+    company: "Datadog",
+    location: "New York, NY (Hybrid)",
+    salary: "$80,000 - $120,000 + Commission",
+    description: "Drive new business by qualifying leads, managing enterprise sales cycles, and closing deals for a leading observability platform. Strong CRM proficiency, negotiation skills, and the ability to communicate technical value propositions to diverse stakeholders required.",
+    skillsRequired: ["salesforce", "crm", "negotiation", "cold outreach", "communication", "leadership"],
+    type: "Full-Time"
+  },
+  {
+    _id: "job_15",
+    title: "Operations Specialist",
+    company: "Slack (Salesforce)",
+    location: "Denver, CO (Remote)",
+    salary: "$85,000 - $115,000",
+    description: "Optimize internal processes and cross-departmental workflows to improve organizational efficiency. Build productivity frameworks, streamline onboarding pipelines, and report on operational KPIs to leadership. Strong project management and Excel skills required.",
+    skillsRequired: ["process optimization", "project management", "excel", "communication", "problem solving", "leadership"],
+    type: "Full-Time"
   }
 ];
 
@@ -112,7 +212,7 @@ async function seedDatabase() {
       // Seed Jobs
       const jobCount = await Job.countDocuments();
       if (jobCount === 0) {
-        const jobsToInsert = dbData.jobs && dbData.jobs.length > 0 
+        const jobsToInsert = dbData.jobs && dbData.jobs.length > 0
           ? dbData.jobs.map(j => ({ ...j, _id: j.id }))
           : INITIAL_DATA_JOBS;
         await Job.insertMany(jobsToInsert);
@@ -198,7 +298,7 @@ const connectDB = async () => {
     await seedDatabase();
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
-    process.exit(1);
+    // process.exit(1);
   }
 };
 

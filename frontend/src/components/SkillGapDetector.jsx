@@ -21,6 +21,46 @@ const ROLE_REQS_MOCK = {
   "Frontend Developer": {
     required: ["html", "css", "javascript", "typescript", "react", "tailwind css", "git"],
     preferred: ["next.js", "redux", "sass", "webpack", "vite"]
+  },
+  "Data Scientist": {
+    required: ["python", "sql", "statistics", "pandas", "numpy", "scikit-learn"],
+    preferred: ["r", "tableau", "deep learning", "tensorflow", "git", "data science"]
+  },
+  "DevOps Engineer": {
+    required: ["docker", "kubernetes", "aws", "ci/cd", "terraform", "linux", "git"],
+    preferred: ["gcp", "ansible", "jenkins", "nginx", "golang"]
+  },
+  "QA Engineer": {
+    required: ["testing", "selenium", "cypress", "javascript", "python", "git"],
+    preferred: ["ci/cd", "postman", "rest apis", "agile", "scrum"]
+  },
+  "Product Manager": {
+    required: ["roadmap", "product requirements", "user stories", "agile", "scrum", "prioritization", "communication"],
+    preferred: ["wireframing", "a/b testing", "google analytics", "sql", "project management"]
+  },
+  "UI/UX Designer": {
+    required: ["figma", "ui design", "ux design", "wireframes", "prototyping", "user research"],
+    preferred: ["sketch", "adobe xd", "information architecture", "interaction design", "communication"]
+  },
+  "Data Analyst": {
+    required: ["sql", "excel", "tableau", "pandas", "python", "data visualization"],
+    preferred: ["power bi", "google analytics", "mixpanel", "r", "statistics"]
+  },
+  "HR Manager": {
+    required: ["recruiting", "talent acquisition", "interviewing", "communication", "onboarding", "leadership"],
+    preferred: ["ats", "payroll", "compliance", "employee relations", "teamwork"]
+  },
+  "Marketing Manager": {
+    required: ["seo", "sem", "growth marketing", "content strategy", "crm", "communication"],
+    preferred: ["google analytics", "copywriting", "hubspot", "salesforce", "collaboration"]
+  },
+  "Sales Representative": {
+    required: ["salesforce", "crm", "negotiation", "cold outreach", "communication", "leadership"],
+    preferred: ["hubspot", "copywriting", "project management", "collaboration"]
+  },
+  "Operations Specialist": {
+    required: ["process optimization", "project management", "excel", "communication", "problem solving", "leadership"],
+    preferred: ["sql", "crm", "agile", "scrum", "collaboration"]
   }
 };
 
@@ -30,7 +70,7 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
 
   // Merge and calculate rows
   const allSkillsMap = [];
-  
+
   reqs.required.forEach(skill => {
     const found = currentSkills.includes(skill.toLowerCase());
     allSkillsMap.push({
@@ -74,9 +114,9 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>GOAL:</span>
-            <select 
-              className="role-selector" 
-              value={targetRole} 
+            <select
+              className="role-selector"
+              value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
             >
               {Object.keys(ROLE_REQS_MOCK).map((role) => (
@@ -91,7 +131,7 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
         {/* Left Side: Summary Panel */}
         <div className="glass-card" style={{ height: 'fit-content', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h3 style={{ fontSize: '18px' }}>Competency Summary</h3>
-          
+
           <div style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-glass)', padding: '16px', borderRadius: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
               <span style={{ color: 'var(--text-muted)' }}>Core Skills Match</span>
@@ -123,8 +163,8 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
             </div>
           )}
 
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             style={{ width: '100%', gap: '10px' }}
             onClick={() => setView('roadmap')}
           >
@@ -152,10 +192,10 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
                   </td>
                   <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{row.type}</td>
                   <td>
-                    <span style={{ 
-                      fontSize: '11px', 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
+                    <span style={{
+                      fontSize: '11px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       gap: '4px',
                       color: row.status === 'Found' ? 'var(--success)' : 'var(--text-muted)'
                     }}>
@@ -166,7 +206,7 @@ export default function SkillGapDetector({ parsedResume, targetRole, setTargetRo
                   <td>
                     <span className="priority-indicator">
                       <span className={`indicator-dot ${row.dotColor}`}></span>
-                      <span style={{ 
+                      <span style={{
                         fontSize: '12px',
                         color: row.priority === 'High' ? 'var(--danger)' : row.priority === 'Medium' ? 'var(--warning)' : 'var(--text-dark)'
                       }}>{row.priority}</span>

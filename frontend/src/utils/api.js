@@ -115,7 +115,7 @@ export const api = {
   async uploadResume(file, targetRole) {
     const formData = new FormData();
     formData.append('resume', file);
-    formData.append('targetRole', targetRole);
+    formData.append('targetRole', targetRole || "AI Engineer");
 
     const headers = {};
     const token = localStorage.getItem('token');
@@ -131,6 +131,28 @@ export const api = {
         body: formData
       },
       'Failed to parse resume'
+    );
+  },
+
+  async parseDocumentForCoach(file) {
+    const formData = new FormData();
+    formData.append('resume', file);
+    formData.append('targetRole', 'Career Coach Analysis');
+
+    const headers = {};
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return fetchJson(
+      `${EXPRESS_API_URL}/resume/upload`,
+      {
+        method: 'POST',
+        headers,
+        body: formData
+      },
+      'Failed to process document context'
     );
   },
 

@@ -14,6 +14,7 @@ import {
   PauseCircle,
   PlayCircle,
   RefreshCw,
+  Sparkles,
   Square,
   Video
 } from 'lucide-react';
@@ -48,6 +49,7 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
   const [spokenLine, setSpokenLine] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [availableVoices, setAvailableVoices] = useState([]);
+  const [isFollowUpActive, setIsFollowUpActive] = useState(false);
 
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
@@ -103,15 +105,47 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      let nextTranscript = '';
-      for (let index = 0; index < event.results.length; index += 1) {
-        nextTranscript += event.results[index][0].transcript;
+      let finalTranscript = '';
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
       }
-      setTranscript(nextTranscript.trim());
+
+      if (finalTranscript) {
+        setTranscript((prev) => {
+          const base = prev.replace(/ \[transcribing\.\.\.\]$/, '');
+          return (base ? base + ' ' + finalTranscript.trim() : finalTranscript.trim());
+        });
+      } else if (interimTranscript) {
+        setTranscript((prev) => {
+          const base = prev.replace(/ \[transcribing\.\.\.\]$/, '');
+          return base + ' [transcribing...]';
+        });
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'not-allowed') {
+        setError('Microphone access denied. Please enable mic permissions.');
+      }
     };
 
     recognition.onend = () => {
-      setIsListening(false);
+      // Auto-restart if we are still 'answering'
+      if (isAnswering && speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.start();
+        } catch (_err) {
+          // already started or failed
+        }
+      } else {
+        setIsListening(false);
+      }
     };
 
     speechRecognitionRef.current = recognition;
@@ -262,9 +296,13 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
   const startAnswerSession = () => {
     setVideoReport(null);
     setError('');
-    setTranscript('');
+    // Only clear transcript if we are NOT in a follow-up flow
+    if (!isFollowUpActive) {
+      setTranscript('');
+    }
     setTimeLeft(timerSeconds);
     setIsAnswering(true);
+    setIsFollowUpActive(false);
 
     intervalRef.current = window.setInterval(() => {
       setTimeLeft((current) => {
@@ -281,7 +319,7 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
         speechRecognitionRef.current.start();
         setIsListening(true);
       } catch (_err) {
-        setIsListening(false);
+        setIsListening(true); // maybe already listening
       }
     }
   };
@@ -324,11 +362,14 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
       );
       setVideoReport(result.report);
       onInterviewScoreUpdate(result.report.overall_score);
+
       if (result.report && result.report.follow_up_question) {
-        speakAsInterviewer("Thank you. " + result.report.follow_up_question);
+        speakAsInterviewer("Good points. " + result.report.follow_up_question);
+        setIsFollowUpActive(true);
       }
     } catch (err) {
-      setError(err.message || 'Virtual interview evaluation failed.');
+      console.error("Evaluation error:", err);
+      setError(err.message || 'Virtual interview evaluation failed. Verify your internet connection.');
     } finally {
       setGrading(false);
     }
@@ -516,210 +557,197 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
                 <button className={`btn ${cameraEnabled ? 'btn-secondary' : 'btn-accent'}`} onClick={toggleCamera}>
                   <Camera size={16} /> {cameraEnabled ? 'Disable Camera' : 'Enable Camera'}
                 </button>
-                <button className="btn btn-primary" onClick={beginVideoSession} disabled={startingVideoSession}>
-                  {startingVideoSession ? <Loader className="animate-spin" size={16} /> : <Video size={16} />}
-                  {startingVideoSession ? 'Building Session...' : 'Start Session'}
-                </button>
-              </div>
-            </div>
-
-            <div className="video-panel-grid">
-              <div className="video-preview-shell">
-                <video ref={videoRef} autoPlay muted playsInline className="video-preview" />
-                {cameraEnabled && (
-                  <div className="camera-hud-overlay">
-                    <div className="hud-corner top-left"></div>
-                    <div className="hud-corner top-right"></div>
-                    <div className="hud-corner bottom-left"></div>
-                    <div className="hud-corner bottom-right"></div>
-                    <div className="hud-grid-lines"></div>
-                    {isAnswering && (
-                      <div className="hud-recording-dot">
-                        <span className="dot-blink"></span> REC
-                      </div>
-                    )}
-                  </div>
-                )}
-                {!cameraEnabled && (
-                  <div className="video-preview-placeholder">
-                    <Camera size={28} />
-                    <p>Enable your webcam to rehearse eye contact and posture.</p>
-                  </div>
-                )}
-                <div className="video-status-bar">
-                  <span className={`status-pill ${cameraEnabled ? 'live' : ''}`}>{cameraEnabled ? 'Camera Live' : 'Camera Off'}</span>
-                  <span className={`status-pill ${isListening ? 'live' : ''}`}>{isListening ? 'Transcript Listening' : speechSupported ? 'Transcript Ready' : 'Transcript Manual'}</span>
-                </div>
-              </div>
-
-              <div className="video-sidebar">
-                <div className={`interviewer-avatar-card ${isInterviewerSpeaking ? 'speaking' : ''}`}>
-                  <div className="avatar-stage video-avatar-stage">
-                    <div className="video-avatar-backdrop">
-                      <div className="backdrop-ring ring-one"></div>
-                      <div className="backdrop-ring ring-two"></div>
-                      <div className="backdrop-grid"></div>
-                    </div>
-                    <div className="avatar-halo"></div>
-                    <div className={`hologram-container ${isInterviewerSpeaking ? 'speaking' : ''}`}>
-                      <div className="hologram-orb"></div>
-                      <div className="hologram-wave wave-1"></div>
-                      <div className="hologram-wave wave-2"></div>
-                      <div className="hologram-wave wave-3"></div>
-                      <div className="hologram-ring ring-inner"></div>
-                      <div className="hologram-ring ring-outer"></div>
-                      <div className="hologram-scanner"></div>
-                    </div>
-                    <div className="avatar-lower-third">
-                      <div>
-                        <strong>{videoSession?.interviewer_name || 'Virtual Interviewer'}</strong>
-                        <span>{videoSession?.interviewer_style || 'AI Interview Specialist'}</span>
-                      </div>
-                      <div className={`lower-third-live ${isInterviewerSpeaking ? 'active' : ''}`}>LIVE</div>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="virtual-eyebrow">Animated Interviewer</p>
-                    <h4 style={{ fontSize: '16px' }}>{videoSession?.interviewer_name || 'Virtual Interviewer'}</h4>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
-                      {isInterviewerSpeaking ? 'Speaking live' : 'Waiting for your answer'}
-                    </p>
-                  </div>
-                  <div className="interviewer-subtitle">
-                    {spokenLine || 'Start a session to hear your interviewer introduce the round.'}
-                  </div>
-                  <div className="interviewer-voice-actions">
-                    <button className="btn btn-secondary" onClick={() => setVoiceEnabled((current) => !current)}>
-                      {voiceEnabled ? <PauseCircle size={16} /> : <PlayCircle size={16} />}
-                      {voiceEnabled ? 'Voice On' : 'Voice Off'}
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => {
-                        if (currentVideoQuestion) {
-                          speakAsInterviewer(currentVideoQuestion.question);
-                        } else if (videoSession?.intro_script) {
-                          speakAsInterviewer(videoSession.intro_script);
-                        }
-                      }}
-                      disabled={!videoSession}
-                    >
-                      <PlayCircle size={16} /> Replay Prompt
-                    </button>
-                  </div>
-                </div>
-
-                <div className="video-control-card">
-                  <label>Interview Type</label>
-                  <select className="role-selector" value={interviewType} onChange={(e) => setInterviewType(e.target.value)}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select className="role-selector compact" value={interviewType} onChange={(e) => setInterviewType(e.target.value)} style={{ padding: '8px 12px', height: 'auto' }}>
                     <option value="Technical">Technical</option>
                     <option value="Behavioral">Behavioral</option>
                     <option value="Hiring Manager">Hiring Manager</option>
-                    <option value="System Design">System Design</option>
                   </select>
-                </div>
-
-                <div className="video-control-card">
-                  <label>Answer Timer</label>
-                  <div className="timer-chip-row">
-                    {[90, 120, 180].map((seconds) => (
-                      <button
-                        key={seconds}
-                        className={`chip-btn ${timerSeconds === seconds ? 'active' : ''}`}
-                        onClick={() => {
-                          setTimerSeconds(seconds);
-                          setTimeLeft(seconds);
-                        }}
-                      >
-                        {seconds / 60 < 2 ? '90 sec' : `${seconds / 60} min`}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="video-timer">{formattedTime}</div>
-                </div>
-
-                  <div className="video-control-card">
-                  <h4 style={{ fontSize: '14px', marginBottom: '10px' }}>Delivery Cues</h4>
-                  <div className="coach-checklist">
-                    <div><CheckCircle2 size={14} /> Lead with the headline of your answer.</div>
-                    <div><CheckCircle2 size={14} /> Use one concrete example with impact.</div>
-                    <div><CheckCircle2 size={14} /> Pause briefly before your closing line.</div>
-                  </div>
+                  <button className="btn btn-primary" onClick={beginVideoSession} disabled={startingVideoSession}>
+                    {startingVideoSession ? <Loader className="animate-spin" size={16} /> : <Video size={16} />}
+                    {startingVideoSession ? 'Building...' : 'Start Session'}
+                  </button>
                 </div>
               </div>
             </div>
 
             {videoSession ? (
               <>
-                <div className="virtual-interviewer-card">
-                  <div>
-                    <p className="virtual-eyebrow">Interviewer</p>
-                    <h3>{videoSession.interviewer_name}</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{videoSession.interviewer_style}</p>
+                <div className="video-panel-grid">
+                  <div className="video-preview-shell">
+                    <video ref={videoRef} autoPlay muted playsInline className="video-preview" />
+                    {cameraEnabled && (
+                      <div className="camera-hud-overlay">
+                        <div className="hud-corner top-left"></div>
+                        <div className="hud-corner top-right"></div>
+                        <div className="hud-corner bottom-left"></div>
+                        <div className="hud-corner bottom-right"></div>
+                        <div className="hud-grid-lines"></div>
+                        {isAnswering && (
+                          <div className="hud-recording-dot">
+                            <span className="dot-blink"></span> REC
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!cameraEnabled && (
+                      <div className="video-preview-placeholder">
+                        <Camera size={28} />
+                        <p>Enable your webcam to rehearse eye contact and posture.</p>
+                      </div>
+                    )}
+
+                    {/* Overlay Prompt on Video */}
+                    {currentVideoQuestion && (
+                      <div className="video-prompt-overlay animate-slideUp">
+                        <div className="prompt-content">
+                          <div className="prompt-header">
+                            <MonitorPlay size={14} />
+                            <span>{isFollowUpActive ? 'FOLLOW-UP QUESTION' : `LIVE PROMPT #${videoQuestionIndex + 1}`}</span>
+                          </div>
+                          <h3>{isFollowUpActive ? videoReport?.follow_up_question : currentVideoQuestion.question}</h3>
+                          {isFollowUpActive && <div className="follow-up-hint">Answering follow-up will update your cumulative evaluation.</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="video-status-bar">
+                      <span className={`status-pill ${cameraEnabled ? 'live' : ''}`}>{cameraEnabled ? 'Camera Live' : 'Camera Off'}</span>
+                      <span className={`status-pill ${isListening ? 'live' : ''}`}>{isListening ? 'Transcript Listening' : speechSupported ? 'Transcript Ready' : 'Transcript Manual'}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ color: '#dbe4ff', fontSize: '14px', lineHeight: '1.6' }}>{videoSession.intro_script}</p>
-                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {(Array.isArray(videoSession.delivery_focus) ? videoSession.delivery_focus : [videoSession.delivery_focus]).filter(Boolean).map((focus, index) => (
-                        <span key={`${focus}-${index}`} className="meta-pill">{focus}</span>
-                      ))}
+
+                  <div className="video-sidebar">
+                    {/* Interviewer Profile Mini Card (compact) */}
+                    <div className={`interviewer-profile-card ${isInterviewerSpeaking ? 'active' : ''}`}>
+                      <div className="avatar-mini-stage">
+                        <div className={`hologram-orb-mini ${isInterviewerSpeaking ? 'speaking' : ''}`}></div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ fontSize: '14px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{videoSession.interviewer_name}</h4>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{videoSession.interviewer_style}</p>
+                      </div>
+                      <div className={`live-pulse ${isInterviewerSpeaking ? 'active' : ''}`}></div>
+                    </div>
+
+                    <div className={`interviewer-avatar-card ${isInterviewerSpeaking ? 'speaking' : ''}`}>
+                      <div className="avatar-stage video-avatar-stage">
+                        <div className="video-avatar-backdrop">
+                          <div className="backdrop-ring ring-one"></div>
+                          <div className="backdrop-ring ring-two"></div>
+                          <div className="backdrop-grid"></div>
+                        </div>
+                        <div className="avatar-halo"></div>
+                        <div className={`hologram-container ${isInterviewerSpeaking ? 'speaking' : ''}`}>
+                          <div className="hologram-orb"></div>
+                          <div className="hologram-wave wave-1"></div>
+                          <div className="hologram-wave wave-2"></div>
+                          <div className="hologram-wave wave-3"></div>
+                          <div className="hologram-ring ring-inner"></div>
+                          <div className="hologram-ring ring-outer"></div>
+                          <div className="hologram-scanner"></div>
+                        </div>
+                        {/* Compact lower third */}
+                        <div className="avatar-caption">
+                          {spokenLine || 'Waiting...'}
+                        </div>
+                      </div>
+
+                      <div className="interviewer-voice-actions">
+                        <button className="btn btn-secondary" style={{ padding: '8px 12px', fontSize: '12px' }} onClick={() => setVoiceEnabled((current) => !current)}>
+                          {voiceEnabled ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+                          {voiceEnabled ? 'Voice On' : 'Voice Off'}
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 12px', fontSize: '12px' }}
+                          onClick={() => {
+                            if (currentVideoQuestion) {
+                              speakAsInterviewer(currentVideoQuestion.question);
+                            } else if (videoSession?.intro_script) {
+                              speakAsInterviewer(videoSession.intro_script);
+                            }
+                          }}
+                          disabled={!videoSession}
+                        >
+                          <RefreshCw size={14} /> Replay
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="video-control-card compact">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={{ margin: 0 }}>Timer</label>
+                        <div className="video-timer-mini">{formattedTime}</div>
+                      </div>
+                      <div className="timer-chip-row" style={{ marginTop: '10px' }}>
+                        {[90, 120, 180].map((seconds) => (
+                          <button
+                            key={seconds}
+                            className={`chip-btn ${timerSeconds === seconds ? 'active' : ''}`}
+                            style={{ padding: '4px 8px', fontSize: '10px' }}
+                            onClick={() => {
+                              setTimerSeconds(seconds);
+                              setTimeLeft(seconds);
+                            }}
+                          >
+                            {seconds / 60 < 2 ? '90s' : `${seconds / 60}m`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="video-control-card compact">
+                      <label>Intent</label>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>{currentVideoQuestion?.intent || "Standard evaluation"}</p>
                     </div>
                   </div>
                 </div>
 
-                {currentVideoQuestion && (
-                  <div className="question-panel">
-                    <h3 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <MonitorPlay size={18} style={{ color: 'var(--secondary)' }} /> Live Prompt {videoQuestionIndex + 1}
-                    </h3>
-                    <p style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '12px' }}>
-                      {currentVideoQuestion.question}
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '10px' }}>
-                      Interviewer intent: {currentVideoQuestion.intent}
-                    </p>
-                  </div>
-                )}
-
-                <div className="glass-card">
+                <div className="glass-card video-action-bar">
                   <div className="video-action-row">
                     <button className={`btn ${isAnswering ? 'btn-secondary' : 'btn-accent'}`} onClick={isAnswering ? stopAnswerSession : startAnswerSession}>
                       {isAnswering ? <Square size={16} /> : <Mic size={16} />}
-                      {isAnswering ? 'Stop Answer' : 'Start Answer'}
+                      {isAnswering ? 'Stop' : 'Start Recording'}
                     </button>
-                    <button className="btn btn-secondary" onClick={() => setTranscript('')}>
-                      <RefreshCw size={16} /> Reset Transcript
-                    </button>
+
+                    <div className="action-divider"></div>
+
                     <button className="btn btn-primary" onClick={evaluateVideoAnswer} disabled={grading || !transcript.trim()}>
-                      {grading ? <Loader className="animate-spin" size={16} /> : <ArrowRight size={16} />}
-                      {grading ? 'Evaluating...' : 'Get AI Feedback'}
+                      {grading ? <Loader className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                      {grading ? 'Analyzing...' : 'Get AI Evaluation'}
+                    </button>
+
+                    <button className="btn btn-secondary" onClick={nextVideoQuestion} title="Skip to next">
+                      <ArrowRight size={16} />
                     </button>
                   </div>
 
-                  <div className="form-group" style={{ marginTop: '20px' }}>
-                    <label>Answer Transcript</label>
+                  <div className="transcript-overlay-area">
                     <textarea
-                      className="form-input"
-                      style={{ minHeight: '200px', lineHeight: '1.7' }}
-                      placeholder={speechSupported ? 'Your transcript will appear here while you speak. You can also edit it manually before grading.' : 'Speech recognition is unavailable in this browser, so paste or type your spoken answer here.'}
+                      className="transcript-textarea"
+                      placeholder={speechSupported ? 'Transcribing live...' : 'Type your answer here...'}
                       value={transcript}
                       onChange={(e) => setTranscript(e.target.value)}
                     />
-                  </div>
-
-                  <div className="transcript-footnote">
-                    {speechSupported ? (
-                      <span>{isListening ? <Mic size={14} /> : <MicOff size={14} />} Live transcript works best in Chromium-based browsers with microphone access.</span>
-                    ) : (
-                      <span><AlertCircle size={14} /> Live transcript is not supported here, but manual practice still works well.</span>
-                    )}
+                    <button className="btn-icon-sm" onClick={() => setTranscript('')} title="Clear">
+                      <RefreshCw size={14} />
+                    </button>
                   </div>
                 </div>
 
+                <div className="transcript-footnote">
+                  {speechSupported ? (
+                    <span>{isListening ? <Mic size={14} /> : <MicOff size={14} />} Live transcript works best in Chromium-based browsers with microphone access.</span>
+                  ) : (
+                    <span><AlertCircle size={14} /> Live transcript is not supported here, but manual practice still works well.</span>
+                  )}
+                </div>
+
                 {videoReport && (
-                  <div className="video-feedback-grid">
+                  <div className="video-feedback-grid animate-fadeIn">
                     <div className="glass-card score-stack">
-                      <h3 style={{ fontSize: '16px' }}>Virtual Interview Score</h3>
+                      <h3 style={{ fontSize: '16px' }}>Interview Score</h3>
                       <div className="score-orb">{videoReport.overall_score}</div>
                       <div className="score-mini-grid">
                         <div>
@@ -735,9 +763,6 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
                           <strong>{videoReport.confidence_score}</strong>
                         </div>
                       </div>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                        {videoReport.is_real_ai ? 'Groq-backed live interview feedback' : 'Local fallback coaching feedback'}
-                      </p>
                     </div>
 
                     <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -751,7 +776,7 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
                       </div>
 
                       <div>
-                        <h4 className="feedback-title warning"><AlertCircle size={14} /> What To Tighten</h4>
+                        <h4 className="feedback-title warning"><AlertCircle size={14} /> Critical Feedback</h4>
                         <div className="feedback-list">
                           {videoReport.improvements.map((item, index) => (
                             <div key={`${item}-${index}`}>{item}</div>
@@ -765,16 +790,16 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
                       </div>
 
                       <div className="follow-up-panel">
-                        <h4>Polished Answer Shape</h4>
+                        <h4>Polished Answer</h4>
                         <p>{videoReport.sample_polished_answer}</p>
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                         <button className="btn btn-secondary" onClick={() => setVideoReport(null)}>
-                          Review Again
+                          Review
                         </button>
                         <button className="btn btn-primary" onClick={nextVideoQuestion}>
-                          Next Prompt <ArrowRight size={14} />
+                          Next <ArrowRight size={14} />
                         </button>
                       </div>
                     </div>
@@ -783,11 +808,9 @@ export default function MockInterview({ targetRole, onInterviewScoreUpdate }) {
               </>
             ) : (
               <div className="video-empty-state">
-                <Video size={24} />
-                <div>
-                  <h3>Build a Realistic Mock Interview</h3>
-                  <p>Start a session to generate a live interviewer persona, three role-specific prompts, and AI delivery feedback for your spoken answers.</p>
-                </div>
+                <Video size={48} style={{ color: 'var(--primary)', opacity: 0.5 }} />
+                <h3>Ready to Practice?</h3>
+                <p>Select your interview type and start a session to practice with a real-time AI interviewer.</p>
               </div>
             )}
           </div>
