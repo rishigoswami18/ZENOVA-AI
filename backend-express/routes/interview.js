@@ -191,8 +191,10 @@ router.post('/video-grade', async (req, res) => {
   }
 });
 
+const optionalAuth = require('../middleware/optionalAuth');
+
 // Proxy to coach-chat in FastAPI AI engine (protected by gateway auth)
-router.post('/coach-chat', authMiddleware, async (req, res) => {
+router.post('/coach-chat', optionalAuth, async (req, res) => {
   try {
     const { message, history, topic } = req.body;
     const response = await axios.post(`${AI_SERVICE_URL}/coach-chat`, {

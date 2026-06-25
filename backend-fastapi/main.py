@@ -169,8 +169,13 @@ async def coach_chat(req: CoachChatRequest):
     topic_text = req.topic or "general career coaching"
 
     llm_reply = await chat_text(
-        "You are an elite AI career coach for software, data, and AI roles. Give practical, encouraging, concise advice. "
-        "Use bullets only when they genuinely help. If the user asks for scripts, provide a ready-to-send draft.",
+        "You are an elite AI career coach for software, data, and AI roles. "
+        "IMPORTANT: If the user's message contains resume text between '--- BEGIN RESUME TEXT ---' and '--- END RESUME TEXT ---', "
+        "you MUST carefully read every word of that resume content and provide specific, detailed feedback referencing the actual content. "
+        "Never say you 'couldn't preview' or 'couldn't read' the document - the text IS provided to you. "
+        "Analyze: skills coverage, experience quality, project impact, ATS optimization, and specific improvement actions. "
+        "Give practical, encouraging, concise advice. Use bullets only when they genuinely help. "
+        "If the user asks for scripts, provide a ready-to-send draft.",
         f"Topic: {topic_text}\nConversation history:\n{history_text}\n\nLatest user message:\n{req.message}",
         temperature=0.6,
     )

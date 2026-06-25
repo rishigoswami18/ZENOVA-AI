@@ -54,21 +54,21 @@ export default function ResumeAnalyzer({ onResumeParsed, parsedResume, targetRol
       <div className="glass-card">
         <h2 style={{ fontSize: '20px', marginBottom: '6px' }}>Resume Parser & ATS Optimizer</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-          Upload your resume in PDF or TXT format. We will scan your key terms, calculate ATS compatibility scoring, and detail critical keyword gaps.
+          Upload your resume in PDF, Word (DOCX), or TXT format. We will scan your key terms, calculate ATS compatibility scoring, and detail critical keyword gaps.
         </p>
 
-        <div 
+        <div
           className="upload-zone"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={triggerFileInput}
         >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept=".pdf,.txt" 
-            style={{ display: 'none' }} 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf,.txt,.doc,.docx"
+            style={{ display: 'none' }}
           />
           <Upload className="upload-icon" />
           {file ? (
@@ -79,7 +79,7 @@ export default function ResumeAnalyzer({ onResumeParsed, parsedResume, targetRol
           ) : (
             <div>
               <h3>Drag & drop your resume here, or <span style={{ color: 'var(--primary)', fontWeight: '600' }}>browse files</span></h3>
-              <p style={{ marginTop: '4px' }}>Supports PDF and TXT documents up to 5MB</p>
+              <p style={{ marginTop: '4px' }}>Supports PDF, Word, and TXT documents up to 5MB</p>
             </div>
           )}
         </div>
@@ -92,7 +92,7 @@ export default function ResumeAnalyzer({ onResumeParsed, parsedResume, targetRol
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-          <button 
+          <button
             className="btn btn-primary"
             onClick={handleUpload}
             disabled={!file || loading}
@@ -157,7 +157,7 @@ export default function ResumeAnalyzer({ onResumeParsed, parsedResume, targetRol
           {/* Right Pane - Specific Improvement Cards */}
           <div className="glass-card">
             <h3 style={{ fontSize: '18px', marginBottom: '20px' }}>AI Career Improvement Strategy</h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {parsedResume.suggestions.map((sug, i) => (
                 <div key={i} className={`suggestion-card priority-${sug.priority}`}>

@@ -14,13 +14,18 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const allowedExtensions = ['.pdf', '.txt'];
-    const allowedMimeTypes = ['application/pdf', 'text/plain'];
-    
+    const allowedExtensions = ['.pdf', '.txt', '.doc', '.docx'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
     if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only PDF and TXT resumes are allowed for security reasons.'));
+      cb(new Error('Invalid file type. Only PDF, DOC, DOCX, and TXT resumes are allowed.'));
     }
   }
 });
@@ -34,7 +39,7 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
     }
 
     const targetRole = req.body.targetRole || "AI Engineer";
-    
+
     // Construct FormData to forward file stream to FastAPI Python server
     const form = new FormData();
     form.append('file', req.file.buffer, {
@@ -53,7 +58,7 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
     });
 
     const report = response.data;
-    
+
     // Save report in database if JWT token is verified, or save anonymously
     let userId = "anonymous";
     const authHeader = req.headers.authorization;
@@ -81,8 +86,8 @@ router.post('/upload', upload.single('resume'), async (req, res) => {
     res.status(200).json(resumeResponse);
   } catch (err) {
     console.error(`Resume parsing error [Target: ${AI_SERVICE_URL}]:`, err.message);
-    const detail = err.response && err.response.data && err.response.data.detail 
-      ? err.response.data.detail 
+    const detail = err.response && err.response.data && err.response.data.detail
+      ? err.response.data.detail
       : err.message;
     res.status(500).json({ error: `AI Parsing service unavailable (${AI_SERVICE_URL}): ` + detail });
   }

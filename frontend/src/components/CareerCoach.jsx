@@ -6,7 +6,7 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hello! I am your AI Career Coach. I can help you negotiate salary, prepare for technical rounds at FAANG, review your resume structure, or suggest high-value projects for your portfolio.\n\nWhat are you focused on today?"
+      content: "Hello! I am your AI Career Coach. I can help you negotiate salary, prepare for technical rounds at FAANG, review your resume structure, or suggest high-value projects for your portfolio.\n\n**You can attach your resume (PDF or Word) here, and I'll analyze it to give you personalized career advice!**\n\nWhat are you focused on today?"
     }
   ]);
   const [input, setInput] = useState('');
@@ -43,13 +43,27 @@ export default function CareerCoach({ coachContext, clearCoachContext }) {
       setAnalyzingFile(true);
       try {
         const analysis = await api.parseDocumentForCoach(attachedFile);
-        const fileContext = `[SYSTEM CONTEXT: The user attached a document named "${attachedFile.name}". \nParsed content: ${analysis.raw_text_preview || "No preview available"}\nSkills detected: ${analysis.skills ? analysis.skills.join(', ') : 'None'}]\n\n`;
-        textToSend = fileContext + (input || "Analyze this document.");
+        // The Express API wraps the FastAPI response inside a "report" field
+        const report = analysis.report || analysis;
+        const resumeText = report.raw_text_preview || "";
+        const detectedSkills = report.skills || report.skills_extracted || [];
+        const atsScore = report.ats_score || "N/A";
+        const missingSkills = report.skills_match?.missing_required || [];
+
+        const fileContext = `[RESUME DOCUMENT CONTENT - You MUST read and reference this content in your response]\n` +
+          `Document: "${attachedFile.name}"\n` +
+          `ATS Score: ${atsScore}\n` +
+          `Skills Found: ${detectedSkills.length > 0 ? detectedSkills.join(', ') : 'None detected'}\n` +
+          `Missing Critical Skills: ${missingSkills.length > 0 ? missingSkills.join(', ') : 'None'}\n` +
+          `--- BEGIN RESUME TEXT ---\n${resumeText}\n--- END RESUME TEXT ---\n\n`;
+
+        textToSend = fileContext + (input || "Please analyze my resume in detail. Tell me what's strong, what's weak, and give me specific actionable improvements.");
         if (!originalUserMessage) {
-          originalUserMessage = `Analyzed document: ${attachedFile.name}`;
+          originalUserMessage = `📄 Analyzed document: ${attachedFile.name}`;
         }
       } catch (err) {
-        setMessages(prev => [...prev, { role: 'assistant', content: "I couldn't process that file. Please make sure it's a valid PDF or Word document." }]);
+        console.error("Document parsing failed:", err);
+        setMessages(prev => [...prev, { role: 'assistant', content: "I couldn't process that file. Please make sure it's a valid PDF or Word document and that the backend services are running." }]);
         setAnalyzingFile(false);
         return;
       }
